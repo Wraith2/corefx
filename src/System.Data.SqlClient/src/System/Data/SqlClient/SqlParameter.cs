@@ -16,6 +16,7 @@ using MSS = Microsoft.SqlServer.Server;
 using Microsoft.SqlServer.Server;
 
 using System.ComponentModel.Design.Serialization;
+using System.Collections;
 
 namespace System.Data.SqlClient
 {
@@ -1191,7 +1192,7 @@ namespace System.Data.SqlClient
                     throw SQL.NotEnoughColumnsInStructuredType();
                 }
                 fields = new List<MSS.SmiExtendedMetaData>(dt.Columns.Count);
-                bool[] keyCols = new bool[dt.Columns.Count];
+                BitArray keyCols = new BitArray(dt.Columns.Count);
                 bool hasKey = false;
 
                 // set up primary key as unique key list
@@ -1222,7 +1223,7 @@ namespace System.Data.SqlClient
                 if (hasKey)
                 {
                     props = new SmiMetaDataPropertyCollection();
-                    props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(new List<bool>(keyCols));
+                    props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(keyCols);
                 }
             }
             else if (value is SqlDataReader)
@@ -1233,7 +1234,7 @@ namespace System.Data.SqlClient
                     throw SQL.NotEnoughColumnsInStructuredType();
                 }
 
-                bool[] keyCols = new bool[fields.Count];
+                BitArray keyCols = new BitArray(fields.Count);
                 bool hasKey = false;
                 for (int i = 0; i < fields.Count; i++)
                 {
@@ -1249,7 +1250,7 @@ namespace System.Data.SqlClient
                 if (hasKey)
                 {
                     props = new SmiMetaDataPropertyCollection();
-                    props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(new List<bool>(keyCols));
+                    props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(keyCols);
                 }
             }
             else if (value is IEnumerable<SqlDataRecord>)
@@ -1267,9 +1268,9 @@ namespace System.Data.SqlClient
                         if (0 < fieldCount)
                         {
                             // It's valid!  Grab those fields.
-                            bool[] keyCols = new bool[fieldCount];
-                            bool[] defaultFields = new bool[fieldCount];
-                            bool[] sortOrdinalSpecified = new bool[fieldCount];
+                            BitArray keyCols = new BitArray(fieldCount);
+                            BitArray defaultFields = new BitArray(fieldCount);
+                            BitArray sortOrdinalSpecified = new BitArray(fieldCount);
                             int maxSortOrdinal = -1;  // largest sort ordinal seen, used to optimize locating holes in the list
                             bool hasKey = false;
                             bool hasDefault = false;
@@ -1322,7 +1323,7 @@ namespace System.Data.SqlClient
                             if (hasKey)
                             {
                                 props = new SmiMetaDataPropertyCollection();
-                                props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(new List<bool>(keyCols));
+                                props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(keyCols);
                             }
 
                             if (hasDefault)
@@ -1333,7 +1334,7 @@ namespace System.Data.SqlClient
                                     props = new SmiMetaDataPropertyCollection();
                                 }
 
-                                props[MSS.SmiPropertySelector.DefaultFields] = new MSS.SmiDefaultFieldsProperty(new List<bool>(defaultFields));
+                                props[MSS.SmiPropertySelector.DefaultFields] = new MSS.SmiDefaultFieldsProperty(defaultFields);
                             }
 
                             if (0 < sortCount)
@@ -1404,7 +1405,7 @@ namespace System.Data.SqlClient
 
                 int fieldCount = schema.Rows.Count;
                 fields = new List<MSS.SmiExtendedMetaData>(fieldCount);
-                bool[] keyCols = new bool[fieldCount];
+                BitArray keyCols = new BitArray(fieldCount);
                 bool hasKey = false;
                 int ordinalForIsKey = schema.Columns[SchemaTableColumn.IsKey].Ordinal;
                 int ordinalForColumnOrdinal = schema.Columns[SchemaTableColumn.ColumnOrdinal].Ordinal;
@@ -1479,7 +1480,7 @@ namespace System.Data.SqlClient
                 if (hasKey)
                 {
                     props = new MSS.SmiMetaDataPropertyCollection();
-                    props[MSS.SmiPropertySelector.UniqueKey] = new SmiUniqueKeyProperty(new List<bool>(keyCols));
+                    props[MSS.SmiPropertySelector.UniqueKey] = new SmiUniqueKeyProperty(keyCols);
                 }
             }
         }

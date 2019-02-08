@@ -2023,9 +2023,9 @@ namespace Microsoft.SqlServer.Server
         }
 
 
-        internal static void FillCompatibleSettersFromRecord(SmiEventSink_Default sink, SmiTypedGetterSetter setters, SmiMetaData[] metaData, SqlDataRecord record, SmiDefaultFieldsProperty useDefaultValues)
+        internal static void FillCompatibleSettersFromRecord(SmiEventSink_Default sink, SmiTypedGetterSetter setters, IList<SmiExtendedMetaData> metaData, SqlDataRecord record, SmiDefaultFieldsProperty useDefaultValues)
         {
-            for (int i = 0; i < metaData.Length; ++i)
+            for (int i = 0; i < metaData.Count; ++i)
             {
                 if (null != useDefaultValues && useDefaultValues[i])
                 {
@@ -3795,8 +3795,7 @@ namespace Microsoft.SqlServer.Server
             try
             {
                 // Need to copy field metadata to an array to call FillCompatibleITypeSettersFromRecord
-                SmiExtendedMetaData[] mdFields = new SmiExtendedMetaData[metaData.FieldMetaData.Count];
-                metaData.FieldMetaData.CopyTo(mdFields, 0);
+                IList<SmiExtendedMetaData> mdFields = metaData.FieldMetaData;
 
                 SmiDefaultFieldsProperty defaults = (SmiDefaultFieldsProperty)metaData.ExtendedProperties[SmiPropertySelector.DefaultFields];
 
@@ -3828,14 +3827,14 @@ namespace Microsoft.SqlServer.Server
 
                         SqlDataRecord record = enumerator.Current;
 
-                        if (record.FieldCount != mdFields.Length)
+                        if (record.FieldCount != mdFields.Count)
                         {
                             throw SQL.EnumeratedRecordFieldCountChanged(recordNumber);
                         }
 
                         for (int i = 0; i < record.FieldCount; i++)
                         {
-                            if (!MetaDataUtilsSmi.IsCompatible(metaData.FieldMetaData[i], record.GetSqlMetaData(i)))
+                            if (!MetaDataUtilsSmi.IsCompatible(mdFields[i], record.GetSqlMetaData(i)))
                             {
                                 throw SQL.EnumeratedRecordMetaDataChanged(record.GetName(i), recordNumber);
                             }

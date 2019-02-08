@@ -7,6 +7,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -36,9 +37,9 @@ namespace Microsoft.SqlServer.Server
         private bool _isReadOnly;
 
         // Singleton empty instances to ensure each property is always non-null
-        private static readonly SmiDefaultFieldsProperty s_emptyDefaultFields = new SmiDefaultFieldsProperty(new List<bool>());
+        private static readonly SmiDefaultFieldsProperty s_emptyDefaultFields = new SmiDefaultFieldsProperty(null);
         private static readonly SmiOrderProperty s_emptySortOrder = new SmiOrderProperty(new List<SmiOrderProperty.SmiColumnOrder>());
-        private static readonly SmiUniqueKeyProperty s_emptyUniqueKey = new SmiUniqueKeyProperty(new List<bool>());
+        private static readonly SmiUniqueKeyProperty s_emptyUniqueKey = new SmiUniqueKeyProperty(null);
 
         internal static readonly SmiMetaDataPropertyCollection EmptyInstance = CreateEmptyInstance();
 
@@ -107,11 +108,16 @@ namespace Microsoft.SqlServer.Server
     // Property defining a list of column ordinals that define a unique key
     internal class SmiUniqueKeyProperty : SmiMetaDataProperty
     {
-        private IList<bool> _columns;
+        //private IList<bool> _columns;
+        private readonly BitArray _columns;
 
-        internal SmiUniqueKeyProperty(IList<bool> columnIsKey)
+        //internal SmiUniqueKeyProperty(IList<bool> columnIsKey)
+        //{
+        //    _columns = new System.Collections.ObjectModel.ReadOnlyCollection<bool>(columnIsKey);
+        //}
+        internal SmiUniqueKeyProperty(BitArray columns)
         {
-            _columns = new System.Collections.ObjectModel.ReadOnlyCollection<bool>(columnIsKey);
+            _columns = columns;
         }
 
         // indexed by column ordinal indicating for each column whether it is key or not
@@ -119,7 +125,7 @@ namespace Microsoft.SqlServer.Server
         {
             get
             {
-                if (_columns.Count <= ordinal)
+                if (_columns is null || _columns.Count <= ordinal)
                 {
                     return false;
                 }
@@ -133,8 +139,8 @@ namespace Microsoft.SqlServer.Server
         [Conditional("DEBUG")]
         internal void CheckCount(int countToMatch)
         {
-            Debug.Assert(0 == _columns.Count || countToMatch == _columns.Count,
-                    "SmiDefaultFieldsProperty.CheckCount: DefaultFieldsProperty size (" + _columns.Count +
+            Debug.Assert(( _columns==null || 0 == _columns.Count ) || countToMatch == (_columns?.Count??0),
+                    "SmiDefaultFieldsProperty.CheckCount: DefaultFieldsProperty size (" + _columns?.Count??0 +
                     ") not equal to checked size (" + countToMatch + ")");
         }
     }
@@ -188,24 +194,18 @@ namespace Microsoft.SqlServer.Server
     // property defining inheritance relationship(s)
     internal class SmiDefaultFieldsProperty : SmiMetaDataProperty
     {
-        #region private fields
+        private readonly BitArray _defaults;
 
-        private IList<bool> _defaults;
-
-        #endregion
-
-        #region internal interface
-
-        internal SmiDefaultFieldsProperty(IList<bool> defaultFields)
+        internal SmiDefaultFieldsProperty(BitArray defaultFields)
         {
-            _defaults = new System.Collections.ObjectModel.ReadOnlyCollection<bool>(defaultFields);
+            _defaults = defaultFields;
         }
 
         internal bool this[int ordinal]
         {
             get
             {
-                if (_defaults.Count <= ordinal)
+                if (_defaults is null || _defaults.Count <= ordinal)
                 {
                     return false;
                 }
@@ -219,11 +219,9 @@ namespace Microsoft.SqlServer.Server
         [Conditional("DEBUG")]
         internal void CheckCount(int countToMatch)
         {
-            Debug.Assert(0 == _defaults.Count || countToMatch == _defaults.Count,
-                    "SmiDefaultFieldsProperty.CheckCount: DefaultFieldsProperty size (" + _defaults.Count +
+            Debug.Assert(( _defaults==null || 0 == _defaults.Count ) || countToMatch == (_defaults?.Count??0),
+                    "SmiDefaultFieldsProperty.CheckCount: DefaultFieldsProperty size (" + _defaults?.Count??0 +
                     ") not equal to checked size (" + countToMatch + ")");
         }
-
-        #endregion
     }
 }

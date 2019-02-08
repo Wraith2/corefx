@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Data;
@@ -43,17 +44,17 @@ namespace Microsoft.SqlServer.Server
     //  This class is also used as implementation for the public SqlMetaData class.
     internal class SmiMetaData
     {
-        private SqlDbType _databaseType;          // Main enum that determines what is valid for other attributes.
-        private long _maxLength;             // Varies for variable-length types, others are fixed value per type
-        private byte _precision;             // Varies for SqlDbType.Decimal, others are fixed value per type
-        private byte _scale;                 // Varies for SqlDbType.Decimal, others are fixed value per type
-        private long _localeId;              // Valid only for character types, others are 0
-        private SqlCompareOptions _compareOptions;        // Valid only for character types, others are SqlCompareOptions.Default
+        private readonly SqlDbType _databaseType;          // Main enum that determines what is valid for other attributes.
+        private readonly long _maxLength;             // Varies for variable-length types, others are fixed value per type
+        private readonly byte _precision;             // Varies for SqlDbType.Decimal, others are fixed value per type
+        private readonly byte _scale;                 // Varies for SqlDbType.Decimal, others are fixed value per type
+        private readonly long _localeId;              // Valid only for character types, others are 0
+        private readonly SqlCompareOptions _compareOptions;        // Valid only for character types, others are SqlCompareOptions.Default
         private Type _clrType;               // Varies for SqlDbType.Udt, others are fixed value per type.
-        private string _udtAssemblyQualifiedName;           // Valid only for UDT types when _clrType is not available
-        private bool _isMultiValued;         // Multiple instances per value? (I.e. tables, arrays)
-        private IList<SmiExtendedMetaData> _fieldMetaData;         // Metadata of fields for structured types
-        private SmiMetaDataPropertyCollection _extendedProperties;  // Extended properties, Key columns, sort order, etc.
+        private readonly string _udtAssemblyQualifiedName;           // Valid only for UDT types when _clrType is not available
+        private readonly bool _isMultiValued;         // Multiple instances per value? (I.e. tables, arrays)
+        private readonly IList<SmiExtendedMetaData> _fieldMetaData;         // Metadata of fields for structured types
+        private readonly SmiMetaDataPropertyCollection _extendedProperties;  // Extended properties, Key columns, sort order, etc.
 
         // Limits for attributes (SmiMetaData will assert that these limits as applicable in constructor)
         internal const long UnlimitedMaxLengthIndicator = -1;  // unlimited (except by implementation) max-length.
@@ -74,11 +75,11 @@ namespace Microsoft.SqlServer.Server
         private static readonly IList<SmiExtendedMetaData> s_emptyFieldList = new List<SmiExtendedMetaData>().AsReadOnly();
 
         // Precision to max length lookup table
-        private static byte[] s_maxLenFromPrecision = new byte[] {5,5,5,5,5,5,5,5,5,9,9,9,9,9,
+        private static readonly byte[] s_maxLenFromPrecision = new byte[] {5,5,5,5,5,5,5,5,5,9,9,9,9,9,
             9,9,9,9,9,13,13,13,13,13,13,13,13,13,17,17,17,17,17,17,17,17,17,17};
 
         // Scale offset to max length lookup table
-        private static byte[] s_maxVarTimeLenOffsetFromScale = new byte[] { 2, 2, 2, 1, 1, 0, 0, 0 };
+        private static readonly byte[] s_maxVarTimeLenOffsetFromScale = new byte[] { 2, 2, 2, 1, 1, 0, 0, 0 };
 
         // Defaults
         internal static readonly SmiMetaData DefaultBigInt = new SmiMetaData(SqlDbType.BigInt, 8, 19, 0, SqlCompareOptions.None);     // SqlDbType.BigInt
@@ -278,7 +279,17 @@ namespace Microsoft.SqlServer.Server
         {
             Debug.Assert(IsSupportedDbType(dbType), "Invalid SqlDbType: " + dbType);
 
-            SetDefaultsForType(dbType);
+            SmiMetaData smdDflt = GetDefaultForType(dbType);
+            _databaseType = dbType;
+            _maxLength = smdDflt.MaxLength;
+            _precision = smdDflt.Precision;
+            _scale = smdDflt.Scale;
+            _localeId = smdDflt.LocaleId;
+            _compareOptions = smdDflt.CompareOptions;
+            _clrType = null;
+            _isMultiValued = smdDflt._isMultiValued;
+            _fieldMetaData = smdDflt._fieldMetaData;            // This is ok due to immutability
+            _extendedProperties = smdDflt._extendedProperties;  // This is ok due to immutability
 
             switch (dbType)
             {
@@ -346,7 +357,22 @@ namespace Microsoft.SqlServer.Server
                 case SqlDbType.Structured:
                     if (null != fieldTypes)
                     {
-                        _fieldMetaData = (new List<SmiExtendedMetaData>(fieldTypes)).AsReadOnly();
+                        if (fieldTypes.IsReadOnly)
+                        {
+                            _fieldMetaData = fieldTypes;
+                        }
+                        else if (fieldTypes is SmiExtendedMetaData[] array)
+                        {
+                            _fieldMetaData = Array.AsReadOnly(array);
+                        }
+                        else if (fieldTypes is List<SmiExtendedMetaData> list)
+                        {
+                            _fieldMetaData = list.AsReadOnly();
+                        }
+                        else
+                        {
+                            _fieldMetaData = (new List<SmiExtendedMetaData>(fieldTypes)).AsReadOnly();
+                        }
                     }
                     _isMultiValued = isMultiValued;
                     _maxLength = _fieldMetaData.Count;
@@ -519,11 +545,7 @@ namespace Microsoft.SqlServer.Server
                 if (SqlDbType.Udt == _databaseType)
                 {
                     // Fault-in assembly-qualified name if type is available
-                    if (_udtAssemblyQualifiedName == null && _clrType != null)
-                    {
-                        _udtAssemblyQualifiedName = _clrType.AssemblyQualifiedName;
-                    }
-                    result = _udtAssemblyQualifiedName;
+                    result = _clrType?.AssemblyQualifiedName;
                 }
                 return result;
             }
@@ -658,22 +680,6 @@ namespace Microsoft.SqlServer.Server
                 "datetime2",            // SqlDbType.DateTime2
                 "datetimeoffset",       // SqlDbType.DateTimeOffset
             };
-
-        // Internal setter to be used by constructors only!  Modifies state!
-        private void SetDefaultsForType(SqlDbType dbType)
-        {
-            SmiMetaData smdDflt = GetDefaultForType(dbType);
-            _databaseType = dbType;
-            _maxLength = smdDflt.MaxLength;
-            _precision = smdDflt.Precision;
-            _scale = smdDflt.Scale;
-            _localeId = smdDflt.LocaleId;
-            _compareOptions = smdDflt.CompareOptions;
-            _clrType = null;
-            _isMultiValued = smdDflt._isMultiValued;
-            _fieldMetaData = smdDflt._fieldMetaData;            // This is ok due to immutability
-            _extendedProperties = smdDflt._extendedProperties;  // This is ok due to immutability
-        }
     }
 
     // SmiExtendedMetaData

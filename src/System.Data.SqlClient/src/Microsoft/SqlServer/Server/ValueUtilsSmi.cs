@@ -3794,10 +3794,8 @@ namespace Microsoft.SqlServer.Server
             IEnumerator<SqlDataRecord> enumerator = null;
             try
             {
-                // Need to copy field metadata to an array to call FillCompatibleITypeSettersFromRecord
                 IList<SmiExtendedMetaData> mdFields = metaData.FieldMetaData;
-
-                SmiDefaultFieldsProperty defaults = (SmiDefaultFieldsProperty)metaData.ExtendedProperties[SmiPropertySelector.DefaultFields];
+                SmiDefaultFieldsProperty defaults = metaData.ExtendedProperties.DefaultFields;
 
                 int recordNumber = 1;   // used only for reporting position when there are errors.
 

@@ -410,9 +410,9 @@ namespace Microsoft.SqlServer.Server
             Debug.Assert(null != _extendedProperties && _extendedProperties.IsReadOnly, "SmiMetaData.ctor: _extendedProperties is " + (null != _extendedProperties ? "writable" : "null"));
             Debug.Assert(null != _fieldMetaData && _fieldMetaData.IsReadOnly, "SmiMetaData.ctor: _fieldMetaData is " + (null != _fieldMetaData ? "writable" : "null"));
 #if DEBUG
-            ((SmiDefaultFieldsProperty)_extendedProperties[SmiPropertySelector.DefaultFields]).CheckCount(_fieldMetaData.Count);
-            ((SmiOrderProperty)_extendedProperties[SmiPropertySelector.SortOrder]).CheckCount(_fieldMetaData.Count);
-            ((SmiUniqueKeyProperty)_extendedProperties[SmiPropertySelector.UniqueKey]).CheckCount(_fieldMetaData.Count);
+            _extendedProperties.DefaultFields.CheckCount(_fieldMetaData.Count);
+            _extendedProperties.SortOrder.CheckCount(_fieldMetaData.Count);
+            _extendedProperties.UniqueKey.CheckCount(_fieldMetaData.Count);
 #endif
         }
 

@@ -1223,7 +1223,7 @@ namespace System.Data.SqlClient
                 if (hasKey)
                 {
                     props = new SmiMetaDataPropertyCollection();
-                    props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(keyCols);
+                    props.UniqueKey = new MSS.SmiUniqueKeyProperty(keyCols);
                 }
             }
             else if (value is SqlDataReader)
@@ -1250,7 +1250,7 @@ namespace System.Data.SqlClient
                 if (hasKey)
                 {
                     props = new SmiMetaDataPropertyCollection();
-                    props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(keyCols);
+                    props.UniqueKey = new MSS.SmiUniqueKeyProperty(keyCols);
                 }
             }
             else if (value is IEnumerable<SqlDataRecord>)
@@ -1322,8 +1322,10 @@ namespace System.Data.SqlClient
 
                             if (hasKey)
                             {
-                                props = new SmiMetaDataPropertyCollection();
-                                props[MSS.SmiPropertySelector.UniqueKey] = new MSS.SmiUniqueKeyProperty(keyCols);
+                                props = new SmiMetaDataPropertyCollection
+                                {
+                                    UniqueKey = new MSS.SmiUniqueKeyProperty(keyCols)
+                                };
                             }
 
                             if (hasDefault)
@@ -1334,7 +1336,7 @@ namespace System.Data.SqlClient
                                     props = new SmiMetaDataPropertyCollection();
                                 }
 
-                                props[MSS.SmiPropertySelector.DefaultFields] = new MSS.SmiDefaultFieldsProperty(defaultFields);
+                                props.DefaultFields = new MSS.SmiDefaultFieldsProperty(defaultFields);
                             }
 
                             if (0 < sortCount)
@@ -1363,8 +1365,7 @@ namespace System.Data.SqlClient
                                     props = new SmiMetaDataPropertyCollection();
                                 }
 
-                                props[MSS.SmiPropertySelector.SortOrder] = new MSS.SmiOrderProperty(
-                                        new List<SmiOrderProperty.SmiColumnOrder>(sort));
+                                props.SortOrder = new MSS.SmiOrderProperty(sort);
                             }
 
                             // pack it up so we don't have to rewind to send the first value
@@ -1480,7 +1481,7 @@ namespace System.Data.SqlClient
                 if (hasKey)
                 {
                     props = new MSS.SmiMetaDataPropertyCollection();
-                    props[MSS.SmiPropertySelector.UniqueKey] = new SmiUniqueKeyProperty(keyCols);
+                    props.UniqueKey = new SmiUniqueKeyProperty(keyCols);
                 }
             }
         }

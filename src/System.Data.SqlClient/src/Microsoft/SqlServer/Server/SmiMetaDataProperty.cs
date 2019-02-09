@@ -9,6 +9,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -21,24 +22,19 @@ namespace Microsoft.SqlServer.Server
     //  This approach to adding properties is added combat the growing number of sparsely-used properties 
     //  that are specially handled on the base classes
 
-    internal enum SmiPropertySelector
-    {
-        DefaultFields = 0x0,
-        SortOrder = 0x1,
-        UniqueKey = 0x2,
-    }
+
 
     // Simple collection for properties.  Could extend to IDictionary support if needed in future.
     internal class SmiMetaDataPropertyCollection
     {
-        private const int SelectorCount = 3;  // number of elements in SmiPropertySelector
-
-        private SmiMetaDataProperty[] _properties;
+        private SmiDefaultFieldsProperty _defaultFields;
+        private SmiOrderProperty _sortOrder;
+        private SmiUniqueKeyProperty _uniqueKey;
         private bool _isReadOnly;
 
         // Singleton empty instances to ensure each property is always non-null
         private static readonly SmiDefaultFieldsProperty s_emptyDefaultFields = new SmiDefaultFieldsProperty(null);
-        private static readonly SmiOrderProperty s_emptySortOrder = new SmiOrderProperty(new List<SmiOrderProperty.SmiColumnOrder>());
+        private static readonly SmiOrderProperty s_emptySortOrder = new SmiOrderProperty(null);
         private static readonly SmiUniqueKeyProperty s_emptyUniqueKey = new SmiUniqueKeyProperty(null);
 
         internal static readonly SmiMetaDataPropertyCollection EmptyInstance = CreateEmptyInstance();
@@ -52,27 +48,35 @@ namespace Microsoft.SqlServer.Server
 
         internal SmiMetaDataPropertyCollection()
         {
-            _properties = new SmiMetaDataProperty[SelectorCount];
-            _isReadOnly = false;
-            _properties[(int)SmiPropertySelector.DefaultFields] = s_emptyDefaultFields;
-            _properties[(int)SmiPropertySelector.SortOrder] = s_emptySortOrder;
-            _properties[(int)SmiPropertySelector.UniqueKey] = s_emptyUniqueKey;
-        }
+       }
 
-        internal SmiMetaDataProperty this[SmiPropertySelector key]
+        public SmiDefaultFieldsProperty DefaultFields
         {
-            get
-            {
-                return _properties[(int)key];
-            }
+            get => _defaultFields ?? s_emptyDefaultFields;
             set
             {
-                if (null == value)
-                {
-                    throw ADP.InternalError(ADP.InternalErrorCode.InvalidSmiCall);
-                }
                 EnsureWritable();
-                _properties[(int)key] = value;
+                _defaultFields = value ?? throw ADP.InternalError(ADP.InternalErrorCode.InvalidSmiCall);
+            }
+        }
+
+        public SmiUniqueKeyProperty UniqueKey
+        {
+            get => _uniqueKey ?? s_emptyUniqueKey;
+            set
+            {
+                EnsureWritable();
+                _uniqueKey = value ?? throw ADP.InternalError(ADP.InternalErrorCode.InvalidSmiCall);
+            }
+        }
+
+        public SmiOrderProperty SortOrder
+        {
+            get => _sortOrder ?? s_emptySortOrder;
+            set
+            {
+                EnsureWritable();
+                _sortOrder = value ?? throw ADP.InternalError(ADP.InternalErrorCode.InvalidSmiCall);
             }
         }
 
@@ -111,10 +115,6 @@ namespace Microsoft.SqlServer.Server
         //private IList<bool> _columns;
         private readonly SmiBitArray _columns;
 
-        //internal SmiUniqueKeyProperty(IList<bool> columnIsKey)
-        //{
-        //    _columns = new System.Collections.ObjectModel.ReadOnlyCollection<bool>(columnIsKey);
-        //}
         internal SmiUniqueKeyProperty(SmiBitArray columns)
         {
             _columns = columns;
@@ -158,7 +158,17 @@ namespace Microsoft.SqlServer.Server
 
         internal SmiOrderProperty(IList<SmiColumnOrder> columnOrders)
         {
-            _columns = new System.Collections.ObjectModel.ReadOnlyCollection<SmiColumnOrder>(columnOrders);
+            if (!(columnOrders is null))
+            {
+                if (columnOrders is ReadOnlyCollection<SmiColumnOrder> readonlyColumnOrders)
+                {
+                    _columns = readonlyColumnOrders;
+                }
+                else
+                {
+                    _columns = new ReadOnlyCollection<SmiColumnOrder>(columnOrders);
+                }
+            }
         }
 
         // Readonly list of the columnorder instances making up the sort order
@@ -167,7 +177,7 @@ namespace Microsoft.SqlServer.Server
         {
             get
             {
-                if (_columns.Count <= ordinal)
+                if (_columns is null ||_columns.Count <= ordinal)
                 {
                     SmiColumnOrder order = new SmiColumnOrder();
                     order.Order = SortOrder.Unspecified;
@@ -185,8 +195,8 @@ namespace Microsoft.SqlServer.Server
         [Conditional("DEBUG")]
         internal void CheckCount(int countToMatch)
         {
-            Debug.Assert(0 == _columns.Count || countToMatch == _columns.Count,
-                    "SmiDefaultFieldsProperty.CheckCount: DefaultFieldsProperty size (" + _columns.Count +
+            Debug.Assert( (_columns is null ||  0 == _columns.Count) || countToMatch == _columns.Count,
+                    "SmiDefaultFieldsProperty.CheckCount: DefaultFieldsProperty size (" + _columns?.Count??0 +
                     ") not equal to checked size (" + countToMatch + ")");
         }
     }

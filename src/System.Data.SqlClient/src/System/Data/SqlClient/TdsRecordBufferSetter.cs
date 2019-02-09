@@ -249,7 +249,7 @@ namespace System.Data.SqlClient
             Debug.Assert(0 <= _currentField && _metaData.FieldMetaData.Count > _currentField, "_currentField out of range for setting a column:" + _currentField);
             Debug.Assert(ordinal == _currentField, "Setter called out of order.  Should be " + _currentField + ", but was " + ordinal);
             // Must not write to field with a DefaultFieldsProperty set to true
-            Debug.Assert(!((SmiDefaultFieldsProperty)_metaData.ExtendedProperties[SmiPropertySelector.DefaultFields])[ordinal],
+            Debug.Assert(!_metaData.ExtendedProperties.DefaultFields[ordinal],
                 "Attempt to write to a default-valued field: " + ordinal);
 #endif
         }
@@ -277,7 +277,7 @@ namespace System.Data.SqlClient
             while (targetColumn > _currentField)
             {
                 // All intermediate fields must be default fields (i.e. have a "true" entry in SmiDefaultFieldsProperty
-                Debug.Assert(((SmiDefaultFieldsProperty)_metaData.ExtendedProperties[SmiPropertySelector.DefaultFields])[_currentField],
+                Debug.Assert(_metaData.ExtendedProperties.DefaultFields[_currentField],
                     "Skipping a field that was not default: " + _currentField);
                 _currentField++;
             }

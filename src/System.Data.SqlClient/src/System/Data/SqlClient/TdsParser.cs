@@ -8016,7 +8016,7 @@ namespace System.Data.SqlClient
                 WriteUnsignedShort(checked((ushort)metaData.FieldMetaData.Count), stateObj);
 
                 // TvpColumnMetaData for each column (look for defaults in this loop
-                MSS.SmiDefaultFieldsProperty defaults = (MSS.SmiDefaultFieldsProperty)metaData.ExtendedProperties[MSS.SmiPropertySelector.DefaultFields];
+                MSS.SmiDefaultFieldsProperty defaults = metaData.ExtendedProperties.DefaultFields;
                 for (int i = 0; i < metaData.FieldMetaData.Count; i++)
                 {
                     WriteTvpColumnMetaData(metaData.FieldMetaData[i], defaults[i], stateObj);
@@ -8079,8 +8079,8 @@ namespace System.Data.SqlClient
 
             // Merge order and unique keys into a single token stream
 
-            MSS.SmiOrderProperty orderProperty = (MSS.SmiOrderProperty)metaData.ExtendedProperties[MSS.SmiPropertySelector.SortOrder];
-            MSS.SmiUniqueKeyProperty uniqueKeyProperty = (MSS.SmiUniqueKeyProperty)metaData.ExtendedProperties[MSS.SmiPropertySelector.UniqueKey];
+            MSS.SmiOrderProperty orderProperty = metaData.ExtendedProperties.SortOrder;
+            MSS.SmiUniqueKeyProperty uniqueKeyProperty = metaData.ExtendedProperties.UniqueKey;
 
             // Build list from
             List<TdsOrderUnique> columnList = new List<TdsOrderUnique>(metaData.FieldMetaData.Count);

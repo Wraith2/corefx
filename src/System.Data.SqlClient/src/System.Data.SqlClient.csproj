@@ -28,6 +28,7 @@
     <Compile Include="Microsoft\SqlServer\Server\ExtendedClrTypeCode.cs" />
     <Compile Include="Microsoft\SqlServer\Server\MemoryRecordBuffer.cs" />
     <Compile Include="Microsoft\SqlServer\Server\MetadataUtilsSmi.cs" />
+    <Compile Include="Microsoft\SqlServer\Server\SmiBitArray.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiEventSink.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiEventSink_Default.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiGettersStream.cs" />

@@ -109,13 +109,13 @@ namespace Microsoft.SqlServer.Server
     internal class SmiUniqueKeyProperty : SmiMetaDataProperty
     {
         //private IList<bool> _columns;
-        private readonly BitArray _columns;
+        private readonly SmiBitArray _columns;
 
         //internal SmiUniqueKeyProperty(IList<bool> columnIsKey)
         //{
         //    _columns = new System.Collections.ObjectModel.ReadOnlyCollection<bool>(columnIsKey);
         //}
-        internal SmiUniqueKeyProperty(BitArray columns)
+        internal SmiUniqueKeyProperty(SmiBitArray columns)
         {
             _columns = columns;
         }
@@ -194,9 +194,9 @@ namespace Microsoft.SqlServer.Server
     // property defining inheritance relationship(s)
     internal class SmiDefaultFieldsProperty : SmiMetaDataProperty
     {
-        private readonly BitArray _defaults;
+        private readonly SmiBitArray _defaults;
 
-        internal SmiDefaultFieldsProperty(BitArray defaultFields)
+        internal SmiDefaultFieldsProperty(SmiBitArray defaultFields)
         {
             _defaults = defaultFields;
         }

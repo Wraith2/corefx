@@ -1192,7 +1192,7 @@ namespace System.Data.SqlClient
                     throw SQL.NotEnoughColumnsInStructuredType();
                 }
                 fields = new List<MSS.SmiExtendedMetaData>(dt.Columns.Count);
-                BitArray keyCols = new BitArray(dt.Columns.Count);
+                SmiBitArray keyCols = new SmiBitArray(dt.Columns.Count);
                 bool hasKey = false;
 
                 // set up primary key as unique key list
@@ -1234,7 +1234,7 @@ namespace System.Data.SqlClient
                     throw SQL.NotEnoughColumnsInStructuredType();
                 }
 
-                BitArray keyCols = new BitArray(fields.Count);
+                SmiBitArray keyCols = new SmiBitArray(fields.Count);
                 bool hasKey = false;
                 for (int i = 0; i < fields.Count; i++)
                 {
@@ -1268,9 +1268,9 @@ namespace System.Data.SqlClient
                         if (0 < fieldCount)
                         {
                             // It's valid!  Grab those fields.
-                            BitArray keyCols = new BitArray(fieldCount);
-                            BitArray defaultFields = new BitArray(fieldCount);
-                            BitArray sortOrdinalSpecified = new BitArray(fieldCount);
+                            SmiBitArray keyCols = new SmiBitArray(fieldCount);
+                            SmiBitArray defaultFields = new SmiBitArray(fieldCount);
+                            SmiBitArray sortOrdinalSpecified = new SmiBitArray(fieldCount);
                             int maxSortOrdinal = -1;  // largest sort ordinal seen, used to optimize locating holes in the list
                             bool hasKey = false;
                             bool hasDefault = false;
@@ -1405,7 +1405,7 @@ namespace System.Data.SqlClient
 
                 int fieldCount = schema.Rows.Count;
                 fields = new List<MSS.SmiExtendedMetaData>(fieldCount);
-                BitArray keyCols = new BitArray(fieldCount);
+                SmiBitArray keyCols = new SmiBitArray(fieldCount);
                 bool hasKey = false;
                 int ordinalForIsKey = schema.Columns[SchemaTableColumn.IsKey].Ordinal;
                 int ordinalForColumnOrdinal = schema.Columns[SchemaTableColumn.ColumnOrdinal].Ordinal;

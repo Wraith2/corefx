@@ -9,12 +9,17 @@
 using Microsoft.SqlServer.Server;
 using System.Diagnostics;
 using System.Data.SqlTypes;
+using System.Buffers;
 
 namespace System.Data.SqlClient
 {
     // TdsRecordBufferSetter handles writing a structured value out to a TDS stream
     internal class TdsRecordBufferSetter : SmiRecordBuffer
     {
+        private static ObjectPool<TdsValueSetter> s_setterPool = new ObjectPool<TdsValueSetter>(
+            factory: () => new TdsValueSetter()
+        );
+
         #region Fields (private)
 
         private TdsValueSetter[] _fieldSetters;      // setters for individual fields
@@ -35,10 +40,13 @@ namespace System.Data.SqlClient
         internal TdsRecordBufferSetter(TdsParserStateObject stateObj, SmiMetaData md)
         {
             Debug.Assert(SqlDbType.Structured == md.SqlDbType, "Unsupported SqlDbType: " + md.SqlDbType);
-            _fieldSetters = new TdsValueSetter[md.FieldMetaData.Count];
+            _fieldSetters = ArrayPool<TdsValueSetter>.Shared.Rent(md.FieldMetaData.Count);
             for (int i = 0; i < md.FieldMetaData.Count; i++)
             {
-                _fieldSetters[i] = new TdsValueSetter(stateObj, md.FieldMetaData[i]);
+                TdsValueSetter setter = s_setterPool.Allocate();
+                setter.Configure(stateObj, md.FieldMetaData[i]);
+                _fieldSetters[i] = setter;
+
             }
             _stateObj = stateObj;
             _metaData = md;
@@ -304,5 +312,29 @@ namespace System.Data.SqlClient
 #endif
         }
         #endregion
+
+        public void Clear()
+        {
+            if (!(_metaData is null))
+            {
+                _stateObj = null;
+                int setterCount = _metaData.FieldMetaData.Count;
+                _metaData = null;
+                TdsValueSetter[] setters = _fieldSetters;
+                _fieldSetters = null;
+#if DEBUG
+                _currentField = 0;
+#endif
+
+                for (int index=0;index<setterCount;index++)
+                {
+                    TdsValueSetter setter = setters[index];
+                    setter.Clear();
+                    s_setterPool.Free(setter);
+                }
+                Array.Clear(setters, 0, setterCount);
+                ArrayPool<TdsValueSetter>.Shared.Return(setters);
+            }
+        }
     }
 }

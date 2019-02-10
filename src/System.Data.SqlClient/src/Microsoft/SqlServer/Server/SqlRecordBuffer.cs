@@ -18,7 +18,7 @@ namespace Microsoft.SqlServer.Server
 {
     internal sealed class SqlRecordBuffer
     {
-        internal enum StorageType
+        internal enum StorageType : byte
         {
             Boolean,
             Byte,

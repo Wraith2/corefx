@@ -469,7 +469,7 @@ namespace System.Data.SqlClient
             }
 
             // Sub-field determination
-            List<SmiExtendedMetaData> fields = null;
+            IList<SmiExtendedMetaData> fields = null;
             MSS.SmiMetaDataPropertyCollection extendedProperties = null;
             if (SqlDbType.Structured == mt.SqlDbType)
             {
@@ -1178,7 +1178,7 @@ namespace System.Data.SqlClient
             return ShouldSerializeSize() ? Size : ValueSize(CoercedValue);
         }
 
-        private void GetActualFieldsAndProperties(out List<MSS.SmiExtendedMetaData> fields, out SmiMetaDataPropertyCollection props, out ParameterPeekAheadValue peekAhead)
+        private void GetActualFieldsAndProperties(out IList<MSS.SmiExtendedMetaData> fields, out SmiMetaDataPropertyCollection props, out ParameterPeekAheadValue peekAhead)
         {
             fields = null;
             props = null;
@@ -1276,11 +1276,12 @@ namespace System.Data.SqlClient
                             bool hasDefault = false;
                             int sortCount = 0;
                             SmiOrderProperty.SmiColumnOrder[] sort = new SmiOrderProperty.SmiColumnOrder[fieldCount];
-                            fields = new List<MSS.SmiExtendedMetaData>(fieldCount);
+                            //fields = new List<MSS.SmiExtendedMetaData>(fieldCount);
+                            fields = firstRecord.InternalGetSmiMetaData();
                             for (int i = 0; i < fieldCount; i++)
                             {
                                 SqlMetaData colMeta = firstRecord.GetSqlMetaData(i);
-                                fields.Add(MSS.MetaDataUtilsSmi.SqlMetaDataToSmiExtendedMetaData(colMeta));
+                                //fields.Add(MSS.MetaDataUtilsSmi.SqlMetaDataToSmiExtendedMetaData(colMeta));
                                 if (colMeta.IsUniqueKey)
                                 {
                                     keyCols[i] = true;

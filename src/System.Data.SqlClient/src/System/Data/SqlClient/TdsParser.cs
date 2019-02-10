@@ -7783,17 +7783,19 @@ namespace System.Data.SqlClient
             //
             // Now write the value
             //
-            TdsParameterSetter paramSetter = new TdsParameterSetter(stateObj, metaData);
-            MSS.ValueUtilsSmi.SetCompatibleValueV200(
-                                        new MSS.SmiEventSink_Default(),  // TDS Errors/events dealt with at lower level for now, just need an object for processing
-                                        paramSetter,
-                                        0,          // ordinal.  TdsParameterSetter only handles one parameter at a time
-                                        metaData,
-                                        value,
-                                        typeCode,
-                                        param.Offset,
-                                        0 < param.Size ? param.Size : -1,
-                                        peekAhead);
+            using (var paramSetter = new TdsParameterSetter(stateObj, metaData))
+            {
+                MSS.ValueUtilsSmi.SetCompatibleValueV200(
+                                            new MSS.SmiEventSink_Default(),  // TDS Errors/events dealt with at lower level for now, just need an object for processing
+                                            paramSetter,
+                                            0,          // ordinal.  TdsParameterSetter only handles one parameter at a time
+                                            metaData,
+                                            value,
+                                            typeCode,
+                                            param.Offset,
+                                            0 < param.Size ? param.Size : -1,
+                                            peekAhead);
+            }
         }
 
         // Writes metadata portion of parameter stream from an SmiParameterMetaData object.

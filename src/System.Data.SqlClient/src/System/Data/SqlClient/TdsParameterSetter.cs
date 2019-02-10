@@ -15,7 +15,7 @@ namespace System.Data.SqlClient
 {
     // Simple Getter/Setter for structured parameters to allow using common ValueUtilsSmi code.
     //  This is a stand-in to having a true SmiRequestExecutor class for TDS.
-    internal class TdsParameterSetter : SmiTypedGetterSetter
+    internal class TdsParameterSetter : SmiTypedGetterSetter, IDisposable
     {
         #region Private fields
 
@@ -68,5 +68,11 @@ namespace System.Data.SqlClient
             _target.EndElements(sink);
         }
         #endregion
+
+        public void Dispose()
+        {
+            _target?.Clear();
+            _target = null;
+        }
     }
 }

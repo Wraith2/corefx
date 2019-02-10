@@ -37,7 +37,16 @@ namespace System.Data.SqlClient
 
         #region Exposed Construct/factory methods
 
+        internal TdsValueSetter()
+        {
+            // this ctor is for object pooling, users must call configure before using it
+        }
         internal TdsValueSetter(TdsParserStateObject stateObj, SmiMetaData md)
+        {
+            Configure(stateObj, md);
+        }
+
+        internal void Configure(TdsParserStateObject stateObj, SmiMetaData md)
         {
             _stateObj = stateObj;
             _metaData = md;
@@ -47,6 +56,18 @@ namespace System.Data.SqlClient
 #if DEBUG
             _currentOffset = 0;
 #endif
+        }
+
+        internal void Clear()
+        {
+            _stateObj = null;
+            _metaData = null;
+            _isPlp = false;
+            _plpUnknownSent = false;
+            _encoder = null;
+#if DEBUG
+            _currentOffset = 0;
+#endif  
         }
 
         #endregion
@@ -305,6 +326,7 @@ namespace System.Data.SqlClient
 #endif
             return length;
         }
+
         internal void SetCharsLength(long length)
         {
             Debug.Assert(

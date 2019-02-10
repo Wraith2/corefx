@@ -42,6 +42,7 @@
     <Compile Include="Microsoft\SqlServer\Server\SqlDataRecord.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SqlRecordBuffer.cs" />
     <Compile Include="Microsoft\SqlServer\Server\ValueUtilsSmi.cs" />
+    <Compile Include="System\ObjectPool.cs" />
     <Compile Include="System\Data\DataException.cs" />
     <Compile Include="System\Data\OperationAbortedException.cs" />
     <Compile Include="System\Data\SqlClient\SqlDbColumn.cs" />

@@ -16,7 +16,7 @@ namespace System.Data.SqlClient
     // TdsRecordBufferSetter handles writing a structured value out to a TDS stream
     internal class TdsRecordBufferSetter : SmiRecordBuffer
     {
-        private static ObjectPool<TdsValueSetter> s_setterPool = new ObjectPool<TdsValueSetter>(
+        private static ObjectsPool<TdsValueSetter> s_setterPool = new ObjectsPool<TdsValueSetter>(
             factory: () => new TdsValueSetter()
         );
 
@@ -40,13 +40,12 @@ namespace System.Data.SqlClient
         internal TdsRecordBufferSetter(TdsParserStateObject stateObj, SmiMetaData md)
         {
             Debug.Assert(SqlDbType.Structured == md.SqlDbType, "Unsupported SqlDbType: " + md.SqlDbType);
-            _fieldSetters = ArrayPool<TdsValueSetter>.Shared.Rent(md.FieldMetaData.Count);
-            for (int i = 0; i < md.FieldMetaData.Count; i++)
+            int setterCount = md.FieldMetaData.Count;
+            _fieldSetters = ArrayPool<TdsValueSetter>.Shared.Rent(setterCount);
+            s_setterPool.Rent(_fieldSetters.AsSpan(0,setterCount));
+            for (int i = 0; i < setterCount; i++)
             {
-                TdsValueSetter setter = s_setterPool.Allocate();
-                setter.Configure(stateObj, md.FieldMetaData[i]);
-                _fieldSetters[i] = setter;
-
+                _fieldSetters[i].Configure(stateObj, md.FieldMetaData[i]);
             }
             _stateObj = stateObj;
             _metaData = md;
@@ -325,14 +324,11 @@ namespace System.Data.SqlClient
 #if DEBUG
                 _currentField = 0;
 #endif
-
                 for (int index=0;index<setterCount;index++)
                 {
-                    TdsValueSetter setter = setters[index];
-                    setter.Clear();
-                    s_setterPool.Free(setter);
+                    setters[index].Clear();
                 }
-                Array.Clear(setters, 0, setterCount);
+                s_setterPool.Return(setters.AsSpan(0,setterCount));
                 ArrayPool<TdsValueSetter>.Shared.Return(setters);
             }
         }

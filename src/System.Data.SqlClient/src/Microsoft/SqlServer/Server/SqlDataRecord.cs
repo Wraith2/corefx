@@ -244,8 +244,7 @@ namespace Microsoft.SqlServer.Server
 
         public virtual bool IsDBNull(int ordinal)
         {
-            EnsureSubclassOverride();
-            ThrowIfInvalidOrdinal(ordinal);
+            ThrowIfInvalidOrdinal(ordinal); // will call EnsureSubclassOverride()
             return ValueUtilsSmi.IsDBNull(_eventSink, _recordBuffer, ordinal);
         }
 

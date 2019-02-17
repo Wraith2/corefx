@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{D4550556-4745-457F-BA8F-3EBF3836D6B4}</ProjectGuid>
     <AssemblyName>System.Data.SqlClient</AssemblyName>
@@ -30,6 +30,7 @@
     <Compile Include="Microsoft\SqlServer\Server\MemoryRecordBuffer.cs" />
     <Compile Include="Microsoft\SqlServer\Server\MetadataUtilsSmi.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiBitArray.cs" />
+    <Compile Include="Microsoft\SqlServer\Server\SmiBitMap.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiEventSink.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiEventSink_Default.cs" />
     <Compile Include="Microsoft\SqlServer\Server\SmiGettersStream.cs" />

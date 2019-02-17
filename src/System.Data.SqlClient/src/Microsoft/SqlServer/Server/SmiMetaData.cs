@@ -44,15 +44,38 @@ namespace Microsoft.SqlServer.Server
     //  This class is also used as implementation for the public SqlMetaData class.
     internal class SmiMetaData
     {
-        private readonly SqlDbType _databaseType;          // Main enum that determines what is valid for other attributes.
-        private readonly long _maxLength;             // Varies for variable-length types, others are fixed value per type
-        private readonly byte _precision;             // Varies for SqlDbType.Decimal, others are fixed value per type
-        private readonly byte _scale;                 // Varies for SqlDbType.Decimal, others are fixed value per type
-        private readonly long _localeId;              // Valid only for character types, others are 0
-        private readonly SqlCompareOptions _compareOptions;        // Valid only for character types, others are SqlCompareOptions.Default
+        /// <summary>
+        /// Main enum that determines what is valid for other attributes.
+        /// </summary>
+        public readonly SqlDbType SqlDbType;
+        /// <summary>
+        /// Varies for variable-length types, others are fixed value per type
+        /// </summary>
+        public readonly long MaxLength;
+        /// <summary>
+        /// Varies for SqlDbType.Decimal, others are fixed value per type
+        /// </summary>
+        public readonly byte Precision;
+        /// <summary>
+        /// 
+        /// </summary>Varies for SqlDbType.Decimal, others are fixed value per type
+        public readonly byte Scale;
+        /// <summary>
+        /// Valid only for character types, others are 0
+        /// </summary>
+        public readonly long LocaleId;
+        /// <summary>
+        /// Valid only for character types, others are SqlCompareOptions.Default
+        /// </summary>
+        public readonly SqlCompareOptions CompareOptions;
+        /// <summary>
+        /// Multiple instances per value? (I.e. tables, arrays)
+        /// </summary>
+        public readonly bool IsMultiValued;
+
         private Type _clrType;               // Varies for SqlDbType.Udt, others are fixed value per type.
         private readonly string _udtAssemblyQualifiedName;           // Valid only for UDT types when _clrType is not available
-        private readonly bool _isMultiValued;         // Multiple instances per value? (I.e. tables, arrays)
+
         private readonly IList<SmiExtendedMetaData> _fieldMetaData;         // Metadata of fields for structured types
         private readonly SmiMetaDataPropertyCollection _extendedProperties;  // Extended properties, Key columns, sort order, etc.
 
@@ -280,14 +303,14 @@ namespace Microsoft.SqlServer.Server
             Debug.Assert(IsSupportedDbType(dbType), "Invalid SqlDbType: " + dbType);
 
             SmiMetaData smdDflt = GetDefaultForType(dbType);
-            _databaseType = dbType;
-            _maxLength = smdDflt.MaxLength;
-            _precision = smdDflt.Precision;
-            _scale = smdDflt.Scale;
-            _localeId = smdDflt.LocaleId;
-            _compareOptions = smdDflt.CompareOptions;
+            SqlDbType = dbType;
+            MaxLength = smdDflt.MaxLength;
+            Precision = smdDflt.Precision;
+            Scale = smdDflt.Scale;
+            LocaleId = smdDflt.LocaleId;
+            CompareOptions = smdDflt.CompareOptions;
             _clrType = null;
-            _isMultiValued = smdDflt._isMultiValued;
+            IsMultiValued = smdDflt.IsMultiValued;
             _fieldMetaData = smdDflt._fieldMetaData;            // This is ok due to immutability
             _extendedProperties = smdDflt._extendedProperties;  // This is ok due to immutability
 
@@ -313,29 +336,29 @@ namespace Microsoft.SqlServer.Server
                     break;
                 case SqlDbType.Binary:
                 case SqlDbType.VarBinary:
-                    _maxLength = maxLength;
+                    MaxLength = maxLength;
                     break;
                 case SqlDbType.Char:
                 case SqlDbType.NChar:
                 case SqlDbType.NVarChar:
                 case SqlDbType.VarChar:
                     // locale and compare options are not validated until they get to the server
-                    _maxLength = maxLength;
-                    _localeId = localeId;
-                    _compareOptions = compareOptions;
+                    MaxLength = maxLength;
+                    LocaleId = localeId;
+                    CompareOptions = compareOptions;
                     break;
                 case SqlDbType.NText:
                 case SqlDbType.Text:
-                    _localeId = localeId;
-                    _compareOptions = compareOptions;
+                    LocaleId = localeId;
+                    CompareOptions = compareOptions;
                     break;
                 case SqlDbType.Decimal:
                     Debug.Assert(MinPrecision <= precision && SqlDecimal.MaxPrecision >= precision, "Invalid precision: " + precision);
                     Debug.Assert(MinScale <= scale && SqlDecimal.MaxScale >= scale, "Invalid scale: " + scale);
                     Debug.Assert(scale <= precision, "Precision: " + precision + " greater than scale: " + scale);
-                    _precision = precision;
-                    _scale = scale;
-                    _maxLength = s_maxLenFromPrecision[precision - 1];
+                    Precision = precision;
+                    Scale = scale;
+                    MaxLength = s_maxLenFromPrecision[precision - 1];
                     break;
                 case SqlDbType.Udt:
                     // For SqlParameter, both userDefinedType and udtAssemblyQualifiedName can be NULL,
@@ -346,11 +369,11 @@ namespace Microsoft.SqlServer.Server
                     _clrType = userDefinedType;
                     if (null != userDefinedType)
                     {
-                        _maxLength = SerializationHelperSql9.GetUdtMaxLength(userDefinedType);
+                        MaxLength = SerializationHelperSql9.GetUdtMaxLength(userDefinedType);
                     }
                     else
                     {
-                        _maxLength = maxLength;
+                        MaxLength = maxLength;
                     }
                     _udtAssemblyQualifiedName = udtAssemblyQualifiedName;
                     break;
@@ -374,23 +397,23 @@ namespace Microsoft.SqlServer.Server
                             _fieldMetaData = (new List<SmiExtendedMetaData>(fieldTypes)).AsReadOnly();
                         }
                     }
-                    _isMultiValued = isMultiValued;
-                    _maxLength = _fieldMetaData.Count;
+                    IsMultiValued = isMultiValued;
+                    MaxLength = _fieldMetaData.Count;
                     break;
                 case SqlDbType.Time:
                     Debug.Assert(MinScale <= scale && scale <= MaxTimeScale, "Invalid time scale: " + scale);
-                    _scale = scale;
-                    _maxLength = 5 - s_maxVarTimeLenOffsetFromScale[scale];
+                    Scale = scale;
+                    MaxLength = 5 - s_maxVarTimeLenOffsetFromScale[scale];
                     break;
                 case SqlDbType.DateTime2:
                     Debug.Assert(MinScale <= scale && scale <= MaxTimeScale, "Invalid time scale: " + scale);
-                    _scale = scale;
-                    _maxLength = 8 - s_maxVarTimeLenOffsetFromScale[scale];
+                    Scale = scale;
+                    MaxLength = 8 - s_maxVarTimeLenOffsetFromScale[scale];
                     break;
                 case SqlDbType.DateTimeOffset:
                     Debug.Assert(MinScale <= scale && scale <= MaxTimeScale, "Invalid time scale: " + scale);
-                    _scale = scale;
-                    _maxLength = 10 - s_maxVarTimeLenOffsetFromScale[scale];
+                    Scale = scale;
+                    MaxLength = 10 - s_maxVarTimeLenOffsetFromScale[scale];
                     break;
                 default:
                     Debug.Assert(false, "How in the world did we get here? :" + dbType);
@@ -473,30 +496,13 @@ namespace Microsoft.SqlServer.Server
             return result;
         }
 
-        // Sql-style compare options for character types.
-        internal SqlCompareOptions CompareOptions => _compareOptions;
-
-        // LCID for type.  0 for non-character types.
-        internal long LocaleId => _localeId;
-
-        // Units of length depend on type.
-        //  NVarChar, NChar, NText: # of Unicode characters
-        //  Everything else: # of bytes
-        internal long MaxLength => _maxLength;
-
-        internal byte Precision => _precision;
-
-        internal byte Scale => _scale;
-
-        internal SqlDbType SqlDbType => _databaseType;
-
         // Clr Type instance for user-defined types
         internal Type Type
         {
             get
             {
                 // Fault-in UDT clr types on access if have assembly-qualified name
-                if (null == _clrType && SqlDbType.Udt == _databaseType && _udtAssemblyQualifiedName != null)
+                if (null == _clrType && SqlDbType.Udt == SqlDbType && _udtAssemblyQualifiedName != null)
                 {
                     _clrType = Type.GetType(_udtAssemblyQualifiedName, true);
                 }
@@ -510,7 +516,7 @@ namespace Microsoft.SqlServer.Server
             get
             {
                 // Fault-in UDT clr types on access if have assembly-qualified name
-                if (null == _clrType && SqlDbType.Udt == _databaseType && _udtAssemblyQualifiedName != null)
+                if (null == _clrType && SqlDbType.Udt == SqlDbType && _udtAssemblyQualifiedName != null)
                 {
                     _clrType = Type.GetType(_udtAssemblyQualifiedName, false);
                 }
@@ -523,14 +529,14 @@ namespace Microsoft.SqlServer.Server
             get
             {
                 string result = null;
-                if (SqlDbType.Udt == _databaseType)
+                if (SqlDbType.Udt == SqlDbType)
                 {
-                    Debug.Assert(string.Empty == s_typeNameByDatabaseType[(int)_databaseType], "unexpected udt?");
+                    Debug.Assert(string.Empty == s_typeNameByDatabaseType[(int)SqlDbType], "unexpected udt?");
                     result = Type.FullName;
                 }
                 else
                 {
-                    result = s_typeNameByDatabaseType[(int)_databaseType];
+                    result = s_typeNameByDatabaseType[(int)SqlDbType];
                     Debug.Assert(null != result, "unknown type name?");
                 }
                 return result;
@@ -542,7 +548,7 @@ namespace Microsoft.SqlServer.Server
             get
             {
                 string result = null;
-                if (SqlDbType.Udt == _databaseType)
+                if (SqlDbType.Udt == SqlDbType)
                 {
                     // Fault-in assembly-qualified name if type is available
                     result = _clrType?.AssemblyQualifiedName;
@@ -550,8 +556,6 @@ namespace Microsoft.SqlServer.Server
                 return result;
             }
         }
-
-        internal bool IsMultiValued => _isMultiValued;
 
         // Returns read-only list of field metadata
         internal IList<SmiExtendedMetaData> FieldMetaData => _fieldMetaData;
@@ -583,16 +587,16 @@ namespace Microsoft.SqlServer.Server
             byte scale,
             SqlCompareOptions compareOptions)
         {
-            _databaseType = sqlDbType;
-            _maxLength = maxLength;
-            _precision = precision;
-            _scale = scale;
-            _compareOptions = compareOptions;
+            SqlDbType = sqlDbType;
+            MaxLength = maxLength;
+            Precision = precision;
+            Scale = scale;
+            CompareOptions = compareOptions;
 
             // defaults are the same for all types for the following attributes.
-            _localeId = 0;
+            LocaleId = 0;
             _clrType = null;
-            _isMultiValued = false;
+            IsMultiValued = false;
             _fieldMetaData = s_emptyFieldList;
             _extendedProperties = SmiMetaDataPropertyCollection.EmptyInstance;
         }

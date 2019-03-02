@@ -38,20 +38,20 @@ namespace Microsoft.SqlServer.Server
         {
             get
             {
-                EnsureSubclassOverride();
+                //EnsureSubclassOverride();
                 return _columnMetaData.Length;
             }
         }
 
         public virtual string GetName(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return GetSqlMetaData(ordinal).Name;
         }
 
         public virtual string GetDataTypeName(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             SqlMetaData metaData = GetSqlMetaData(ordinal);
             if (SqlDbType.Udt == metaData.SqlDbType)
             {
@@ -65,16 +65,16 @@ namespace Microsoft.SqlServer.Server
 
         public virtual Type GetFieldType(int ordinal)
         {
-            EnsureSubclassOverride();
-            {
+            //EnsureSubclassOverride();
+            //{
                 SqlMetaData md = GetSqlMetaData(ordinal);
                 return MetaType.GetMetaTypeFromSqlDbType(md.SqlDbType, false).ClassType;
-            }
+            //}
         }
 
         public virtual object GetValue(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             SmiMetaData metaData = GetSmiMetaData(ordinal);
 
             return ValueUtilsSmi.GetValue200(
@@ -87,7 +87,7 @@ namespace Microsoft.SqlServer.Server
 
         public virtual int GetValues(object[] values)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             if (null == values)
             {
                 throw ADP.ArgumentNull(nameof(values));
@@ -104,7 +104,7 @@ namespace Microsoft.SqlServer.Server
 
         public virtual int GetOrdinal(string name)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             if (null == _fieldNameLookup)
             {
                 string[] names = new string[FieldCount];
@@ -123,7 +123,7 @@ namespace Microsoft.SqlServer.Server
         {
             get
             {
-                EnsureSubclassOverride();
+                //EnsureSubclassOverride();
                 return GetValue(ordinal);
             }
         }
@@ -132,80 +132,80 @@ namespace Microsoft.SqlServer.Server
         {
             get
             {
-                EnsureSubclassOverride();
+                //EnsureSubclassOverride();
                 return GetValue(GetOrdinal(name));
             }
         }
 
         public virtual bool GetBoolean(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetBoolean(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual byte GetByte(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetByte(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual long GetBytes(int ordinal, long fieldOffset, byte[] buffer, int bufferOffset, int length)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetBytes(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), fieldOffset, buffer, bufferOffset, length, true);
         }
 
         public virtual char GetChar(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             throw ADP.NotSupported();
         }
 
         public virtual long GetChars(int ordinal, long fieldOffset, char[] buffer, int bufferOffset, int length)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetChars(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), fieldOffset, buffer, bufferOffset, length);
         }
 
         public virtual Guid GetGuid(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetGuid(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual short GetInt16(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetInt16(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual int GetInt32(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetInt32(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual long GetInt64(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetInt64(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual float GetFloat(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSingle(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual double GetDouble(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetDouble(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual string GetString(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             SmiMetaData colMeta = GetSmiMetaData(ordinal);
             if (_usesStringStorageForXml && SqlDbType.Xml == colMeta.SqlDbType)
             {
@@ -219,32 +219,32 @@ namespace Microsoft.SqlServer.Server
 
         public virtual decimal GetDecimal(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetDecimal(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual DateTime GetDateTime(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetDateTime(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual DateTimeOffset GetDateTimeOffset(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetDateTimeOffset(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual TimeSpan GetTimeSpan(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetTimeSpan(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
 
         public virtual bool IsDBNull(int ordinal)
         {
-            ThrowIfInvalidOrdinal(ordinal); // will call EnsureSubclassOverride()
+            ThrowIfInvalidOrdinal(ordinal);
             return ValueUtilsSmi.IsDBNull(_eventSink, _recordBuffer, ordinal);
         }
 
@@ -253,27 +253,27 @@ namespace Microsoft.SqlServer.Server
         //
         public virtual SqlMetaData GetSqlMetaData(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return _columnMetaData[ordinal];
         }
 
         public virtual Type GetSqlFieldType(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             SqlMetaData md = GetSqlMetaData(ordinal);
             return MetaType.GetMetaTypeFromSqlDbType(md.SqlDbType, false).SqlType;
         }
 
         public virtual object GetSqlValue(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             SmiMetaData metaData = GetSmiMetaData(ordinal);
             return ValueUtilsSmi.GetSqlValue200(_eventSink, _recordBuffer, ordinal, metaData);
         }
 
         public virtual int GetSqlValues(object[] values)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             if (null == values)
             {
                 throw ADP.ArgumentNull(nameof(values));
@@ -291,97 +291,97 @@ namespace Microsoft.SqlServer.Server
 
         public virtual SqlBinary GetSqlBinary(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlBinary(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlBytes GetSqlBytes(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlBytes(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlXml GetSqlXml(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlXml(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlBoolean GetSqlBoolean(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlBoolean(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlByte GetSqlByte(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlByte(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlChars GetSqlChars(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlChars(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlInt16 GetSqlInt16(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlInt16(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlInt32 GetSqlInt32(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlInt32(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlInt64 GetSqlInt64(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlInt64(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlSingle GetSqlSingle(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlSingle(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlDouble GetSqlDouble(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlDouble(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlMoney GetSqlMoney(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlMoney(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlDateTime GetSqlDateTime(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlDateTime(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlDecimal GetSqlDecimal(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlDecimal(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlString GetSqlString(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlString(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual SqlGuid GetSqlGuid(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             return ValueUtilsSmi.GetSqlGuid(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
@@ -390,7 +390,7 @@ namespace Microsoft.SqlServer.Server
         //
         public virtual int SetValues(params object[] values)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             if (null == values)
             {
                 throw ADP.ArgumentNull(nameof(values));
@@ -425,7 +425,7 @@ namespace Microsoft.SqlServer.Server
 
         public virtual void SetValue(int ordinal, object value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             SqlMetaData metaData = GetSqlMetaData(ordinal);
             ExtendedClrTypeCode typeCode = MetaDataUtilsSmi.DetermineExtendedTypeCodeForUseWithSqlDbType(
                         metaData.SqlDbType, false /* isMultiValued */, value, metaData.Type);
@@ -439,199 +439,199 @@ namespace Microsoft.SqlServer.Server
 
         public virtual void SetBoolean(int ordinal, bool value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetBoolean(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetByte(int ordinal, byte value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetByte(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetBytes(int ordinal, long fieldOffset, byte[] buffer, int bufferOffset, int length)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetBytes(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), fieldOffset, buffer, bufferOffset, length);
         }
 
         public virtual void SetChar(int ordinal, char value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             throw ADP.NotSupported();
         }
 
         public virtual void SetChars(int ordinal, long fieldOffset, char[] buffer, int bufferOffset, int length)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetChars(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), fieldOffset, buffer, bufferOffset, length);
         }
 
         public virtual void SetInt16(int ordinal, short value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetInt16(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetInt32(int ordinal, int value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetInt32(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetInt64(int ordinal, long value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetInt64(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetFloat(int ordinal, float value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSingle(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetDouble(int ordinal, double value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetDouble(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetString(int ordinal, string value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetString(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetDecimal(int ordinal, decimal value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetDecimal(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetDateTime(int ordinal, DateTime value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetDateTime(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetTimeSpan(int ordinal, TimeSpan value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetTimeSpan(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetDateTimeOffset(int ordinal, DateTimeOffset value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetDateTimeOffset(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetDBNull(int ordinal)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetDBNull(_eventSink, _recordBuffer, ordinal, true);
         }
 
         public virtual void SetGuid(int ordinal, Guid value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetGuid(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlBoolean(int ordinal, SqlBoolean value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlBoolean(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlByte(int ordinal, SqlByte value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlByte(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlInt16(int ordinal, SqlInt16 value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlInt16(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlInt32(int ordinal, SqlInt32 value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlInt32(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlInt64(int ordinal, SqlInt64 value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlInt64(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlSingle(int ordinal, SqlSingle value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlSingle(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlDouble(int ordinal, SqlDouble value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlDouble(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlMoney(int ordinal, SqlMoney value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlMoney(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlDateTime(int ordinal, SqlDateTime value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlDateTime(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlXml(int ordinal, SqlXml value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlXml(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlDecimal(int ordinal, SqlDecimal value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlDecimal(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlString(int ordinal, SqlString value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlString(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlBinary(int ordinal, SqlBinary value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlBinary(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlGuid(int ordinal, SqlGuid value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlGuid(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlChars(int ordinal, SqlChars value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlChars(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
         public virtual void SetSqlBytes(int ordinal, SqlBytes value)
         {
-            EnsureSubclassOverride();
+            //EnsureSubclassOverride();
             ValueUtilsSmi.SetSqlBytes(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal), value);
         }
 
@@ -698,10 +698,10 @@ namespace Microsoft.SqlServer.Server
         }
 
 
-        internal SqlMetaData[] InternalGetMetaData()
-        {
-            return _columnMetaData;
-        }
+        //internal SqlMetaData[] InternalGetMetaData()
+        //{
+        //    return _columnMetaData;
+        //}
 
         internal SmiExtendedMetaData[] InternalGetSmiMetaData()
         {
@@ -720,13 +720,13 @@ namespace Microsoft.SqlServer.Server
                 throw ADP.IndexOutOfRange(ordinal);
             }
         }
-        private void EnsureSubclassOverride()
-        {
-            if (null == _recordBuffer)
-            {
-                throw SQL.SubclassMustOverride();
-            }
-        }
+        //private void EnsureSubclassOverride()
+        //{
+        //    if (null == _recordBuffer)
+        //    {
+        //        throw SQL.SubclassMustOverride();
+        //    }
+        //}
 
         IDataReader System.Data.IDataRecord.GetData(int ordinal)
         {

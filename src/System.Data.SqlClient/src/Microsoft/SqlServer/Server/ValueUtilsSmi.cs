@@ -3826,13 +3826,13 @@ namespace Microsoft.SqlServer.Server
                         sink.ProcessMessagesAndThrow();
 
                         SqlDataRecord record = enumerator.Current;
-
-                        if (record.FieldCount != mdFields.Count)
+                        int recordFieldCount = record.FieldCount;
+                        if (recordFieldCount != mdFields.Count)
                         {
                             throw SQL.EnumeratedRecordFieldCountChanged(recordNumber);
                         }
 
-                        for (int i = 0; i < record.FieldCount; i++)
+                        for (int i = 0; i < recordFieldCount; i++)
                         {
                             if (!MetaDataUtilsSmi.IsCompatible(mdFields[i], record.GetSqlMetaData(i)))
                             {

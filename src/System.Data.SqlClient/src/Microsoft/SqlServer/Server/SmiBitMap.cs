@@ -19,7 +19,7 @@ namespace Microsoft.SqlServer.Server
         {
             _height = values.GetLength(0);
             _width = values.GetLength(1);
-            int compressedHeight = Div8Rem(_height, out int additionalBits);
+            int compressedHeight = Math.DivRem(_height, 8, out int additionalBits);
             if (additionalBits > 0)
             {
                 compressedHeight += 1;
@@ -31,8 +31,7 @@ namespace Microsoft.SqlServer.Server
                 {
                     if (values[rowIndex, colIndex])
                     {
-                        int bitIndex = 0;
-                        int byteIndex = GetBitIndex(rowIndex, colIndex, out bitIndex);
+                        int byteIndex = GetBitIndex(rowIndex, colIndex, out int bitIndex);
                         _bytes[byteIndex] |= (byte)(1 << bitIndex);
                     }
                 }
@@ -75,14 +74,15 @@ namespace Microsoft.SqlServer.Server
             {
                 throw new ArgumentOutOfRangeException(nameof(colIndex));
             }
-            return Div8Rem(rowIndex + (colIndex * _height), out bitIndex);
+            return Math.DivRem(rowIndex + (colIndex * _height), 8, out bitIndex);
+            //return Div8Rem(rowIndex + (colIndex * _height), out bitIndex);
         }
 
-        private static int Div8Rem(int number, out int remainder)
-        {
-            uint quotient = (uint)number / 8;
-            remainder = number & (8 - 1);    // equivalent to number % 8, since 8 is a power of 2
-            return (int)quotient;
-        }
+        //private static int Div8Rem(int number, out int remainder)
+        //{
+        //    uint quotient = (uint)number / 8;
+        //    remainder = number & (8 - 1);    // equivalent to number % 8, since 8 is a power of 2
+        //    return (int)quotient;
+        //}
     }
 }

@@ -61,8 +61,7 @@ namespace Microsoft.SqlServer.Server
 
         private ref int GetLocationFromIndex(int index, out int extraBits)
         {
-            extraBits = 0;
-            int elementIndex = Div32Rem(index, out extraBits);
+            int elementIndex = Math.DivRem(index, 32, out extraBits);
             if (elementIndex == 0)
             {
                 return ref _first;
@@ -80,13 +79,6 @@ namespace Microsoft.SqlServer.Server
         {
             Debug.Assert(n >= 0);
             return (int)((uint)(n - 1 + (1 << BitShiftPerInt32)) >> BitShiftPerInt32);
-        }
-
-        private static int Div32Rem(int number, out int remainder)
-        {
-            uint quotient = (uint)number / 32;
-            remainder = number & (32 - 1);    // equivalent to number % 32, since 32 is a power of 2
-            return (int)quotient;
         }
     }
 }

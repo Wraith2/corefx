@@ -20,12 +20,13 @@ namespace Microsoft.SqlServer.Server
 {
     public class SqlDataRecord : IDataRecord
     {
-        private SmiRecordBuffer _recordBuffer;
-        private SmiExtendedMetaData[] _columnSmiMetaData;
-        private SmiEventSink_Default _eventSink;
-        private SqlMetaData[] _columnMetaData;
+        private readonly SmiRecordBuffer _recordBuffer;
+        private readonly SmiExtendedMetaData[] _columnSmiMetaData;
+        private readonly SmiEventSink_Default _eventSink;
+        private readonly SqlMetaData[] _columnMetaData;
         private FieldNameLookup _fieldNameLookup;
-        private bool _usesStringStorageForXml;
+        private readonly bool _usesStringStorageForXml;
+        private readonly int _fieldCount;
 
         private static readonly SmiMetaData s_maxNVarCharForXml = new SmiMetaData(SqlDbType.NVarChar, SmiMetaData.UnlimitedMaxLengthIndicator,
                                         SmiMetaData.DefaultNVarChar_NoCollation.Precision,
@@ -34,14 +35,7 @@ namespace Microsoft.SqlServer.Server
                                         SmiMetaData.DefaultNVarChar.CompareOptions,
                                         null);
 
-        public virtual int FieldCount
-        {
-            get
-            {
-                //EnsureSubclassOverride();
-                return _columnMetaData.Length;
-            }
-        }
+        public virtual int FieldCount => _fieldCount;
 
         public virtual string GetName(int ordinal)
         {
@@ -92,8 +86,8 @@ namespace Microsoft.SqlServer.Server
             {
                 throw ADP.ArgumentNull(nameof(values));
             }
-
-            int copyLength = (values.Length < FieldCount) ? values.Length : FieldCount;
+            int fieldCount = FieldCount;
+            int copyLength = (values.Length < fieldCount) ? values.Length : fieldCount;
             for (int i = 0; i < copyLength; i++)
             {
                 values[i] = GetValue(i);
@@ -260,15 +254,13 @@ namespace Microsoft.SqlServer.Server
         public virtual Type GetSqlFieldType(int ordinal)
         {
             //EnsureSubclassOverride();
-            SqlMetaData md = GetSqlMetaData(ordinal);
-            return MetaType.GetMetaTypeFromSqlDbType(md.SqlDbType, false).SqlType;
+            return MetaType.GetMetaTypeFromSqlDbType(GetSqlMetaData(ordinal).SqlDbType, false).SqlType;
         }
 
         public virtual object GetSqlValue(int ordinal)
         {
             //EnsureSubclassOverride();
-            SmiMetaData metaData = GetSmiMetaData(ordinal);
-            return ValueUtilsSmi.GetSqlValue200(_eventSink, _recordBuffer, ordinal, metaData);
+            return ValueUtilsSmi.GetSqlValue200(_eventSink, _recordBuffer, ordinal, GetSmiMetaData(ordinal));
         }
 
         public virtual int GetSqlValues(object[] values)
@@ -279,8 +271,8 @@ namespace Microsoft.SqlServer.Server
                 throw ADP.ArgumentNull(nameof(values));
             }
 
-
-            int copyLength = (values.Length < FieldCount) ? values.Length : FieldCount;
+            int fieldCount = FieldCount;
+            int copyLength = (values.Length < fieldCount) ? values.Length : fieldCount;
             for (int i = 0; i < copyLength; i++)
             {
                 values[i] = GetSqlValue(i);
@@ -397,7 +389,8 @@ namespace Microsoft.SqlServer.Server
             }
 
             // Allow values array longer than FieldCount, just ignore the extra cells.
-            int copyLength = (values.Length > FieldCount) ? FieldCount : values.Length;
+            int fieldCount = FieldCount;
+            int copyLength = (values.Length > fieldCount) ? fieldCount : values.Length;
 
             ExtendedClrTypeCode[] typeCodes = new ExtendedClrTypeCode[copyLength];
 
@@ -647,10 +640,10 @@ namespace Microsoft.SqlServer.Server
             {
                 throw ADP.ArgumentNull(nameof(metaData));
             }
-
-            _columnMetaData = new SqlMetaData[metaData.Length];
-            _columnSmiMetaData = new SmiExtendedMetaData[metaData.Length];
-            for (int i = 0; i < _columnSmiMetaData.Length; i++)
+            _fieldCount = metaData.Length;
+            _columnMetaData = new SqlMetaData[_fieldCount];
+            _columnSmiMetaData = new SmiExtendedMetaData[_fieldCount];
+            for (int i = 0; i < _fieldCount; i++)
             {
                 if (null == metaData[i])
                 {
@@ -671,10 +664,10 @@ namespace Microsoft.SqlServer.Server
         {
             Debug.Assert(null != recordBuffer, "invalid attempt to instantiate SqlDataRecord with null SmiRecordBuffer");
             Debug.Assert(null != metaData, "invalid attempt to instantiate SqlDataRecord with null SmiExtendedMetaData[]");
-
-            _columnMetaData = new SqlMetaData[metaData.Length];
-            _columnSmiMetaData = new SmiExtendedMetaData[metaData.Length];
-            for (int i = 0; i < _columnSmiMetaData.Length; i++)
+            _fieldCount = metaData.Length;
+            _columnMetaData = new SqlMetaData[_fieldCount];
+            _columnSmiMetaData = new SmiExtendedMetaData[_fieldCount];
+            for (int i = 0; i < _fieldCount; i++)
             {
                 _columnSmiMetaData[i] = metaData[i];
                 _columnMetaData[i] = MetaDataUtilsSmi.SmiExtendedMetaDataToSqlMetaData(_columnSmiMetaData[i]);

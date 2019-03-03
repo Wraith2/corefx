@@ -42,14 +42,12 @@ namespace Microsoft.SqlServer.Server
         {
             get
             {
-                int bitIndex = 0;
-                int byteIndex = GetBitIndex((int)row, (int)column, out bitIndex);
+                int byteIndex = GetBitIndex((int)row, (int)column, out int bitIndex);
                 return (_bytes[byteIndex] & (1 << bitIndex)) != 0;
             }
             set
             {
-                int bitIndex = 0;
-                int byteIndex = GetBitIndex((int)row, (int)column, out bitIndex);
+                int byteIndex = GetBitIndex((int)row, (int)column, out int bitIndex);
                 if (value)
                 {
                     _bytes[byteIndex] |= (byte)(1 << bitIndex);
@@ -66,23 +64,7 @@ namespace Microsoft.SqlServer.Server
 
         private int GetBitIndex(int rowIndex, int colIndex, out int bitIndex)
         {
-            if (rowIndex >= _height)
-            {
-                throw new ArgumentOutOfRangeException(nameof(rowIndex));
-            }
-            if (colIndex >= _width)
-            {
-                throw new ArgumentOutOfRangeException(nameof(colIndex));
-            }
             return Math.DivRem(rowIndex + (colIndex * _height), 8, out bitIndex);
-            //return Div8Rem(rowIndex + (colIndex * _height), out bitIndex);
         }
-
-        //private static int Div8Rem(int number, out int remainder)
-        //{
-        //    uint quotient = (uint)number / 8;
-        //    remainder = number & (8 - 1);    // equivalent to number % 8, since 8 is a power of 2
-        //    return (int)quotient;
-        //}
     }
 }

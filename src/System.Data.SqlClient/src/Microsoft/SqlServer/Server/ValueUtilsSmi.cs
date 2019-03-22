@@ -3792,12 +3792,13 @@ namespace Microsoft.SqlServer.Server
             // Get target gettersetter
             setters = setters.GetTypedGetterSetter(sink, ordinal);
             sink.ProcessMessagesAndThrow();
-
-            IEnumerator<SqlDataRecord> enumerator = null;
+            SqlMetaData[] cachedMetaData = null;
+            IEnumerator <SqlDataRecord> enumerator = null;
             try
             {
                 IList<SmiExtendedMetaData> mdFields = metaData.FieldMetaData;
                 SmiDefaultFieldsProperty defaults = metaData.ExtendedProperties.DefaultFields;
+                cachedMetaData = new SqlMetaData[mdFields.Count];
 
                 int recordNumber = 1;   // used only for reporting position when there are errors.
 
@@ -3834,9 +3835,14 @@ namespace Microsoft.SqlServer.Server
 
                         for (int i = 0; i < recordFieldCount; i++)
                         {
-                            if (!MetaDataUtilsSmi.IsCompatible(mdFields[i], record.GetSqlMetaData(i)))
+                            SqlMetaData recordMetaData = record.GetSqlMetaData(i);
+                            if (!ReferenceEquals(recordMetaData, cachedMetaData[i]))
                             {
-                                throw SQL.EnumeratedRecordMetaDataChanged(record.GetName(i), recordNumber);
+                                if (!MetaDataUtilsSmi.IsCompatible(mdFields[i], recordMetaData))
+                                {
+                                    throw SQL.EnumeratedRecordMetaDataChanged(record.GetName(i), recordNumber);
+                                }
+                                cachedMetaData[i] = recordMetaData;
                             }
                         }
 
@@ -3855,6 +3861,10 @@ namespace Microsoft.SqlServer.Server
                 if (null != disposable)
                 {
                     disposable.Dispose();
+                }
+                if (cachedMetaData != null)
+                {
+                    Array.Clear(cachedMetaData, 0, cachedMetaData.Length);
                 }
             }
         }

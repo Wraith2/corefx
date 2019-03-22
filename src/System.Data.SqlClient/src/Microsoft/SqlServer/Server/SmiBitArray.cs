@@ -29,15 +29,13 @@ namespace Microsoft.SqlServer.Server
             get
             {
                 CheckIndex(index);
-                int extraBits = 0;
-                int value = GetLocationFromIndex(index, out extraBits);
+                int value = GetLocationFromIndex(index, out int extraBits);
                 return (value & (1 << extraBits)) != 0;
             }
             set
             {
                 CheckIndex(index);
-                int extraBits = 0;
-                ref int newValue = ref GetLocationFromIndex(index, out extraBits);
+                ref int newValue = ref GetLocationFromIndex(index, out int extraBits);
                 if (value)
                 {
                     newValue |= 1 << extraBits;

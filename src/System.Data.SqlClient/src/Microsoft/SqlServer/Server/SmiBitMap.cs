@@ -45,18 +45,6 @@ namespace Microsoft.SqlServer.Server
                 int byteIndex = GetBitIndex((int)row, (int)column, out int bitIndex);
                 return (_bytes[byteIndex] & (1 << bitIndex)) != 0;
             }
-            set
-            {
-                int byteIndex = GetBitIndex((int)row, (int)column, out int bitIndex);
-                if (value)
-                {
-                    _bytes[byteIndex] |= (byte)(1 << bitIndex);
-                }
-                else
-                {
-                    _bytes[byteIndex] &= (byte)(~(1 << bitIndex));
-                }
-            }
         }
 
         public int Height => _height;

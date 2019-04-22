@@ -272,8 +272,6 @@ namespace System.Data.SqlClient.SNI
         /// </summary>
         public void HandleReceiveError(SNIPacket packet, bool packetOwner)
         {
-            Debug.Assert(!packetOwner, "mars handle is not a physical handle and should never be the packet owner");
-
             lock (_receivedPacketQueue)
             {
                 _connectionError = SNILoadHandle.SingletonInstance.LastError;
@@ -295,8 +293,6 @@ namespace System.Data.SqlClient.SNI
         /// <param name="sniErrorCode">SNI error code</param>
         public void HandleSendComplete(SNIPacket packet, uint sniErrorCode, bool packetOwner)
         {
-            Debug.Assert(!packetOwner, "mars handle is not a physical handle and should never be the packet owner");
-
             lock (this)
             {
                 Debug.Assert(_callbackObject != null);
@@ -333,8 +329,6 @@ namespace System.Data.SqlClient.SNI
         /// <param name="header">SMUX header</param>
         public void HandleReceiveComplete(SNIPacket packet, SNISMUXHeader header, bool packetOwner)
         {
-            Debug.Assert(!packetOwner, "mars handle is not a physical handle and should never be the packet owner");
-
             lock (this)
             {
                 if (_sendHighwater != header.highwater)

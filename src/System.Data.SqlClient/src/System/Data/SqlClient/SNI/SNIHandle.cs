@@ -86,6 +86,10 @@ namespace System.Data.SqlClient.SNI
 
         public virtual int ReserveHeaderSize => 0;
 
+        public abstract SNIPacket RentPacket(int headerSize, int dataSize);
+
+        public abstract void ReturnPacket(SNIPacket packet);
+
 #if DEBUG
         /// <summary>
         /// Test handle for killing underlying connection

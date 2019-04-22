@@ -19,11 +19,21 @@ namespace System.Data.SqlClient.SNI
                                     // _headerOffset is not needed because it is always 0
         private byte[] _data;
         private SNIAsyncCallback _completionCallback;
+#if DEBUG
+        internal readonly SNIHandle _owner;
+#endif
 
-        public SNIPacket(int headerSize, int dataSize)
+        public SNIPacket(SNIHandle owner)
         {
-            Allocate(headerSize, dataSize);
+#if DEBUG
+            _owner = owner;
+#endif
         }
+
+        //public SNIPacket(int headerSize, int dataSize)
+        //{
+        //    Allocate(headerSize, dataSize);
+        //}
 
         /// <summary>
         /// Length of data left to process
@@ -55,16 +65,16 @@ namespace System.Data.SqlClient.SNI
         /// Invoke the completion callback 
         /// </summary>
         /// <param name="sniErrorCode">SNI error</param>
-        public void InvokeCompletionCallback(uint sniErrorCode)
+        public void InvokeCompletionCallback(uint sniErrorCode, bool packetOwner)
         {
-            _completionCallback(this, sniErrorCode);
+            _completionCallback(this, sniErrorCode, packetOwner);
         }
 
         /// <summary>
         /// Allocate space for data
         /// </summary>
         /// <param name="dataLength">Length of byte array to be allocated</param>
-        private void Allocate(int headerLength, int dataLength)
+        public void Allocate(int headerLength, int dataLength)
         {
             _data = ArrayPool<byte>.Shared.Rent(headerLength + dataLength);
             _dataCapacity = dataLength;

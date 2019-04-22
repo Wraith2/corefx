@@ -15,7 +15,7 @@ namespace System.Data.SqlClient.SNI
     /// <summary>
     /// Named Pipe connection handle
     /// </summary>
-    internal sealed class SNINpHandle : SNIHandle
+    internal sealed class SNINpHandle : SNIPhysicalHandle
     {
         internal const string DefaultPipePath = @"sql\query"; // e.g. \\HOSTNAME\pipe\sql\query
         private const int MAX_PIPE_INSTANCES = 255;
@@ -150,7 +150,8 @@ namespace System.Data.SqlClient.SNI
                 packet = null;
                 try
                 {
-                    packet = new SNIPacket(headerSize: 0, dataSize: _bufferSize);
+                    //packet = new SNIPacket(headerSize: 0, dataSize: _bufferSize);
+                    packet = RentPacket(headerSize: 0, dataSize: _bufferSize);
                     packet.ReadFromStream(_stream);
 
                     if (packet.Length == 0)
@@ -174,7 +175,8 @@ namespace System.Data.SqlClient.SNI
 
         public override uint ReceiveAsync(ref SNIPacket packet)
         {
-            packet = new SNIPacket(headerSize: 0, dataSize: _bufferSize);
+            //packet = new SNIPacket(headerSize: 0, dataSize: _bufferSize);
+            packet = RentPacket(headerSize: 0, dataSize:_bufferSize);
 
             try
             {
@@ -287,7 +289,7 @@ namespace System.Data.SqlClient.SNI
         {
             if (packet != null)
             {
-                packet.Release();
+                ReturnPacket(packet);
             }
             return SNICommon.ReportSNIError(SNIProviders.NP_PROV, SNICommon.InternalExceptionError, sniException);
         }
@@ -296,7 +298,7 @@ namespace System.Data.SqlClient.SNI
         {
             if (packet != null)
             {
-                packet.Release();
+                ReturnPacket(packet);
             }
             return SNICommon.ReportSNIError(SNIProviders.NP_PROV, nativeError, sniError, errorMessage);
         }

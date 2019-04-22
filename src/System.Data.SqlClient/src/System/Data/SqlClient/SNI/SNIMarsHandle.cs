@@ -77,7 +77,7 @@ namespace System.Data.SqlClient.SNI
         /// <param name="flags">SMUX header flags</param>
         private void SendControlPacket(SNISMUXFlags flags)
         {
-            SNIPacket packet = new SNIPacket(headerSize: SNISMUXHeader.HEADER_LENGTH, dataSize: 0);
+            SNIPacket packet = RentPacket(headerSize: SNISMUXHeader.HEADER_LENGTH, dataSize: 0);
             lock (this)
             {
                 SetupSMUXHeader(0, flags);
@@ -270,8 +270,10 @@ namespace System.Data.SqlClient.SNI
         /// <summary>
         /// Handle receive error
         /// </summary>
-        public void HandleReceiveError(SNIPacket packet)
+        public void HandleReceiveError(SNIPacket packet, bool packetOwner)
         {
+            Debug.Assert(!packetOwner, "mars handle is not a physical handle and should never be the packet owner");
+
             lock (_receivedPacketQueue)
             {
                 _connectionError = SNILoadHandle.SingletonInstance.LastError;
@@ -279,6 +281,11 @@ namespace System.Data.SqlClient.SNI
             }
 
             ((TdsParserStateObject)_callbackObject).ReadAsyncCallback(PacketHandle.FromManagedPacket(packet), 1);
+
+            if (packetOwner)
+            {
+                _connection.ReturnPacket(packet);
+            }
         }
 
         /// <summary>
@@ -286,13 +293,20 @@ namespace System.Data.SqlClient.SNI
         /// </summary>
         /// <param name="packet">SNI packet</param>
         /// <param name="sniErrorCode">SNI error code</param>
-        public void HandleSendComplete(SNIPacket packet, uint sniErrorCode)
+        public void HandleSendComplete(SNIPacket packet, uint sniErrorCode, bool packetOwner)
         {
+            Debug.Assert(!packetOwner, "mars handle is not a physical handle and should never be the packet owner");
+
             lock (this)
             {
                 Debug.Assert(_callbackObject != null);
 
                 ((TdsParserStateObject)_callbackObject).WriteAsyncCallback(PacketHandle.FromManagedPacket(packet), sniErrorCode);
+            }
+
+            if (packetOwner)
+            {
+                _connection.ReturnPacket(packet);
             }
         }
 
@@ -317,8 +331,10 @@ namespace System.Data.SqlClient.SNI
         /// </summary>
         /// <param name="packet">SNI packet</param>
         /// <param name="header">SMUX header</param>
-        public void HandleReceiveComplete(SNIPacket packet, SNISMUXHeader header)
+        public void HandleReceiveComplete(SNIPacket packet, SNISMUXHeader header, bool packetOwner)
         {
+            Debug.Assert(!packetOwner, "mars handle is not a physical handle and should never be the packet owner");
+
             lock (this)
             {
                 if (_sendHighwater != header.highwater)
@@ -339,6 +355,11 @@ namespace System.Data.SqlClient.SNI
                     Debug.Assert(_callbackObject != null);
 
                     ((TdsParserStateObject)_callbackObject).ReadAsyncCallback(PacketHandle.FromManagedPacket(packet), 0);
+
+                    if (packetOwner)
+                    {
+                        _connection.ReturnPacket(packet);
+                    }
                 }
             }
 
@@ -467,6 +488,10 @@ namespace System.Data.SqlClient.SNI
             _connection.DisableSsl();
         }
 
+        public override SNIPacket RentPacket(int headerSize, int dataSize) => _connection.RentPacket(headerSize, dataSize);
+
+        public override void ReturnPacket(SNIPacket packet) => _connection.ReturnPacket(packet);
+
 #if DEBUG
         /// <summary>
         /// Test handle for killing underlying connection
@@ -475,6 +500,8 @@ namespace System.Data.SqlClient.SNI
         {
             _connection.KillConnection();
         }
+
+
 #endif
     }
 }

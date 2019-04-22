@@ -224,7 +224,7 @@ namespace System.Data.SqlClient.SNI
             if (sync)
             {
                 result = handle.Send(packet);
-                packet.Release();
+                handle.ReturnPacket(packet);
             }
             else
             {
@@ -437,15 +437,6 @@ namespace System.Data.SqlClient.SNI
         public void PacketSetData(SNIPacket packet, byte[] data, int length)
         {
             packet.AppendData(data, length);
-        }
-
-        /// <summary>
-        /// Release packet
-        /// </summary>
-        /// <param name="packet">SNI packet</param>
-        public void PacketRelease(SNIPacket packet)
-        {
-            packet.Release();
         }
 
         /// <summary>

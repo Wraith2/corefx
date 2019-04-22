@@ -12,7 +12,7 @@ namespace System.Data.SqlClient.SNI
     /// </summary>
     /// <param name="packet">SNI packet</param>
     /// <param name="sniErrorCode">SNI error code</param>
-    internal delegate void SNIAsyncCallback(SNIPacket packet, uint sniErrorCode);
+    internal delegate void SNIAsyncCallback(SNIPacket packet, uint sniErrorCode, bool packetOwner);
 
     /// <summary>
     /// SNI provider identifiers

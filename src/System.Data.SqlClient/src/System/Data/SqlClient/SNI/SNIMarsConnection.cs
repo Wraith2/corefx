@@ -107,7 +107,7 @@ namespace System.Data.SqlClient.SNI
         {
             if (packet != null)
             {
-                packet.Release();
+                ReturnPacket(packet);
                 packet = null;
             }
             lock (this)
@@ -131,14 +131,18 @@ namespace System.Data.SqlClient.SNI
         /// <summary>
         /// Process a receive error
         /// </summary>
-        public void HandleReceiveError(SNIPacket packet)
+        public void HandleReceiveError(SNIPacket packet, bool packetOwner)
         {
             Debug.Assert(Monitor.IsEntered(this), "HandleReceiveError was called without being locked.");
             foreach (SNIMarsHandle handle in _sessions.Values)
             {
-                handle.HandleReceiveError(packet);
+                handle.HandleReceiveError(packet ,false);
             }
-            packet?.Release();
+
+            if (packetOwner)
+            {
+                ReturnPacket(packet);
+            }
         }
 
         /// <summary>
@@ -146,9 +150,9 @@ namespace System.Data.SqlClient.SNI
         /// </summary>
         /// <param name="packet">SNI packet</param>
         /// <param name="sniErrorCode">SNI error code</param>
-        public void HandleSendComplete(SNIPacket packet, uint sniErrorCode)
+        public void HandleSendComplete(SNIPacket packet, uint sniErrorCode, bool packetOwner)
         {
-            packet.InvokeCompletionCallback(sniErrorCode);
+            packet.InvokeCompletionCallback(sniErrorCode, packetOwner);
         }
 
         /// <summary>
@@ -156,7 +160,7 @@ namespace System.Data.SqlClient.SNI
         /// </summary>
         /// <param name="packet">SNI packet</param>
         /// <param name="sniErrorCode">SNI error code</param>
-        public void HandleReceiveComplete(SNIPacket packet, uint sniErrorCode)
+        public void HandleReceiveComplete(SNIPacket packet, uint sniErrorCode, bool packetOwner)
         {
             SNISMUXHeader currentHeader = null;
             SNIPacket currentPacket = null;
@@ -166,7 +170,7 @@ namespace System.Data.SqlClient.SNI
             {
                 lock (this)
                 {
-                    HandleReceiveError(packet);
+                    HandleReceiveError(packet, packetOwner);
                     return;
                 }
             }
@@ -195,14 +199,14 @@ namespace System.Data.SqlClient.SNI
                                     return;
                                 }
 
-                                HandleReceiveError(packet);
+                                HandleReceiveError(packet, packetOwner);
                                 return;
                             }
                         }
 
                         _currentHeader.Read(_headerBytes);
                         _dataBytesLeft = (int)_currentHeader.length;
-                        _currentPacket = new SNIPacket(headerSize: 0, dataSize: (int)_currentHeader.length);
+                        _currentPacket = _lowerHandle.RentPacket(headerSize: 0, dataSize: (int)_currentHeader.length);
                     }
 
                     currentHeader = _currentHeader;
@@ -224,7 +228,7 @@ namespace System.Data.SqlClient.SNI
                                     return;
                                 }
 
-                                HandleReceiveError(packet);
+                                HandleReceiveError(packet, packetOwner);
                                 return;
                             }
                         }
@@ -235,7 +239,7 @@ namespace System.Data.SqlClient.SNI
                     if (!_sessions.ContainsKey(_currentHeader.sessionId))
                     {
                         SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.SMUX_PROV, 0, SNICommon.InvalidParameterError, string.Empty);
-                        HandleReceiveError(packet);
+                        HandleReceiveError(packet, packetOwner);
                         _lowerHandle.Dispose();
                         _lowerHandle = null;
                         return;
@@ -253,7 +257,7 @@ namespace System.Data.SqlClient.SNI
 
                 if (currentHeader.flags == (byte)SNISMUXFlags.SMUX_DATA)
                 {
-                    currentSession.HandleReceiveComplete(currentPacket, currentHeader);
+                    currentSession.HandleReceiveComplete(currentPacket, currentHeader, packetOwner);
                 }
 
                 if (_currentHeader.flags == (byte)SNISMUXFlags.SMUX_ACK)
@@ -279,7 +283,7 @@ namespace System.Data.SqlClient.SNI
                             return;
                         }
 
-                        HandleReceiveError(packet);
+                        HandleReceiveError(packet, packetOwner);
                         return;
                     }
                 }
@@ -301,6 +305,9 @@ namespace System.Data.SqlClient.SNI
         {
             _lowerHandle.DisableSsl();
         }
+        public SNIPacket RentPacket(int headerSize, int dataSize) => _lowerHandle.RentPacket(headerSize, dataSize);
+
+        public void ReturnPacket(SNIPacket packet) => _lowerHandle.ReturnPacket(packet);
 
 #if DEBUG
         /// <summary>

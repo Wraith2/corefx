@@ -64,9 +64,23 @@ namespace System.Data.SqlClient.SNI
             }
         }
 
-        internal void ReadAsyncCallback(SNIPacket packet, uint error) => ReadAsyncCallback(IntPtr.Zero, PacketHandle.FromManagedPacket(packet), error);
+        internal void ReadAsyncCallback(SNIPacket packet, uint error, bool packetOwner)
+        {
+            ReadAsyncCallback(IntPtr.Zero, PacketHandle.FromManagedPacket(packet), error);
+            if (packetOwner)
+            {
+                _sessionHandle.ReturnPacket(packet);
+            }
+        }
 
-        internal void WriteAsyncCallback(SNIPacket packet, uint sniError) => WriteAsyncCallback(IntPtr.Zero, PacketHandle.FromManagedPacket(packet), sniError);
+        internal void WriteAsyncCallback(SNIPacket packet, uint sniError, bool packetOwner)
+        {
+            WriteAsyncCallback(IntPtr.Zero, PacketHandle.FromManagedPacket(packet), sniError);
+            if (packetOwner)
+            {
+                _sessionHandle.ReturnPacket(packet);
+            }
+        }
 
         protected override void RemovePacketFromPendingList(PacketHandle packet)
         {
@@ -110,8 +124,7 @@ namespace System.Data.SqlClient.SNI
             {
                 throw ADP.ClosedConnectionError();
             }
-            SNIPacket packet = null;
-            error = SNIProxy.Singleton.ReadSyncOverAsync(handle, out packet, timeoutRemaining);
+            error = SNIProxy.Singleton.ReadSyncOverAsync(handle, out SNIPacket packet, timeoutRemaining);
             return PacketHandle.FromManagedPacket(packet);
         }
 
@@ -124,7 +137,12 @@ namespace System.Data.SqlClient.SNI
 
         internal override void ReleasePacket(PacketHandle syncReadPacket)
         {
-            syncReadPacket.ManagedPacket?.Release();
+            SNIPacket packet = syncReadPacket.ManagedPacket;
+            if (packet != null)
+            {
+                SNIHandle handle = Handle;
+                handle.ReturnPacket(packet);
+            }
         }
 
         internal override uint CheckConnection()
@@ -135,8 +153,7 @@ namespace System.Data.SqlClient.SNI
 
         internal override PacketHandle ReadAsync(SessionHandle handle, out uint error)
         {
-            SNIPacket packet;
-            error = SNIProxy.Singleton.ReadAsync(handle.ManagedHandle, out packet);
+            error = SNIProxy.Singleton.ReadAsync(handle.ManagedHandle, out SNIPacket packet);
             return PacketHandle.FromManagedPacket(packet);
         }
 
@@ -170,8 +187,9 @@ namespace System.Data.SqlClient.SNI
 
         internal override PacketHandle GetResetWritePacket(int dataSize)
         {
-            var packet = new SNIPacket(headerSize: _sessionHandle.ReserveHeaderSize, dataSize: dataSize);
-            Debug.Assert(packet.ReservedHeaderSize == _sessionHandle.ReserveHeaderSize, "failed to reserve header");
+            SNIHandle handle = Handle;
+            SNIPacket packet = handle.RentPacket(headerSize: handle.ReserveHeaderSize, dataSize: dataSize);
+            Debug.Assert(packet.ReservedHeaderSize == handle.ReserveHeaderSize, "failed to reserve header");
             return PacketHandle.FromManagedPacket(packet);
         }
 

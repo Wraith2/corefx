@@ -37,12 +37,7 @@ namespace System.Data.SqlClient.SNI
                     error = true;
                 }
 
-                if (error)
-                {
-                    packet.Release();
-                }
-
-                cb(packet, error ? TdsEnums.SNI_ERROR : TdsEnums.SNI_SUCCESS);
+                cb(packet, error ? TdsEnums.SNI_ERROR : TdsEnums.SNI_SUCCESS, true);
             }
 
             ValueTask<int> vt = stream.ReadAsync(new Memory<byte>(_data, _headerLength, _dataCapacity), CancellationToken.None);
@@ -53,7 +48,7 @@ namespace System.Data.SqlClient.SNI
                 // Zero length to go via async local function as is error condition
                 if (_dataLength > 0)
                 {
-                    callback(this, TdsEnums.SNI_SUCCESS);
+                    callback(this, TdsEnums.SNI_SUCCESS, true);
 
                     // Completed
                     return;
@@ -84,12 +79,7 @@ namespace System.Data.SqlClient.SNI
                     status = TdsEnums.SNI_ERROR;
                 }
 
-                cb(packet, status);
-
-                if (disposeAfter)
-                {
-                    packet.Release();
-                }
+                cb(packet, status, disposeAfter);
             }
 
             ValueTask vt = stream.WriteAsync(new Memory<byte>(_data, _headerLength, _dataLength), CancellationToken.None);
@@ -99,12 +89,7 @@ namespace System.Data.SqlClient.SNI
                 // Read the result to register as complete for the ValueTask
                 vt.GetAwaiter().GetResult();
 
-                callback(this, TdsEnums.SNI_SUCCESS);
-
-                if (disposeAfterWriteAsync)
-                {
-                    Release();
-                }
+                callback(this, TdsEnums.SNI_SUCCESS, disposeAfterWriteAsync);
 
                 // Completed
                 return;

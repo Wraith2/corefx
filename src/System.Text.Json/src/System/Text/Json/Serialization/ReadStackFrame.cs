@@ -20,16 +20,29 @@ namespace System.Text.Json.Serialization
         internal bool EnumerableCreated;
 
         // Support System.Array and other types that don't implement IList
-        internal List<object> TempEnumerableValues;
+        internal IList TempEnumerableValues;
 
-        // For performance, we order the properties by the first usage and this index helps find the right slot quicker.
+        // For performance, we order the properties by the first deserialize and PropertyIndex helps find the right slot quicker.
         internal int PropertyIndex;
+        internal List<PropertyRef> PropertyRefCache;
+
+        // The current JSON data for a property does not match a given POCO, so ignore the property (recursively for enumerables or object).
         internal bool Drain;
+
+        internal void Initialize(Type type, JsonSerializerOptions options)
+        {
+            JsonClassInfo = options.GetOrAddClass(type);
+            if (JsonClassInfo.ClassType == ClassType.Value || JsonClassInfo.ClassType == ClassType.Enumerable)
+            {
+                JsonPropertyInfo = JsonClassInfo.GetPolicyProperty();
+            }
+        }
 
         internal void Reset()
         {
             ReturnValue = null;
             JsonClassInfo = null;
+            PropertyRefCache = null;
             PropertyIndex = 0;
             Drain = false;
             ResetProperty();
@@ -75,19 +88,32 @@ namespace System.Text.Json.Serialization
                 return JsonClassInfo.ElementClassInfo.Type;
             }
 
-            return JsonPropertyInfo.PropertyType;
+            return JsonPropertyInfo.RuntimePropertyType;
         }
 
         internal static object CreateEnumerableValue(ref Utf8JsonReader reader, ref ReadStack state, JsonSerializerOptions options)
         {
+            JsonPropertyInfo jsonPropertyInfo = state.Current.JsonPropertyInfo;
+
             // If the property has an EnumerableConverter, then we use tempEnumerableValues.
-            if (state.Current.JsonPropertyInfo.EnumerableConverter != null)
+            if (jsonPropertyInfo.EnumerableConverter != null)
             {
-                state.Current.TempEnumerableValues = new List<object>();
+                IList converterList;
+                if (jsonPropertyInfo.ElementClassInfo.ClassType == ClassType.Value)
+                {
+                    converterList = jsonPropertyInfo.ElementClassInfo.GetPolicyProperty().CreateConverterList();
+                }
+                else
+                {
+                    converterList =  new List<object>();
+                }
+
+                state.Current.TempEnumerableValues = converterList;
+
                 return null;
             }
 
-            Type propType = state.Current.JsonPropertyInfo.PropertyType;
+            Type propType = state.Current.JsonPropertyInfo.RuntimePropertyType;
             if (typeof(IList).IsAssignableFrom(propType))
             {
                 // If IList, add the members as we create them.
@@ -120,39 +146,6 @@ namespace System.Text.Json.Serialization
         {
             Debug.Assert(ReturnValue == null);
             ReturnValue = value;
-        }
-
-        internal static void SetReturnValue(object value, JsonSerializerOptions options, ref ReadStackFrame current, bool setPropertyDirectly = false)
-        {
-            if (current.IsEnumerable())
-            {
-                if (current.TempEnumerableValues != null)
-                {
-                    current.TempEnumerableValues.Add(value);
-                }
-                else
-                {
-                    ((IList)current.ReturnValue).Add(value);
-                }
-            }
-            else if (!setPropertyDirectly && current.IsPropertyEnumerable())
-            {
-                Debug.Assert(current.JsonPropertyInfo != null);
-                Debug.Assert(current.ReturnValue != null);
-                if (current.TempEnumerableValues != null)
-                {
-                    current.TempEnumerableValues.Add(value);
-                }
-                else
-                {
-                    ((IList)current.JsonPropertyInfo.GetValueAsObject(current.ReturnValue, options)).Add(value);
-                }
-            }
-            else
-            {
-                Debug.Assert(current.JsonPropertyInfo != null);
-                current.JsonPropertyInfo.SetValueAsObject(current.ReturnValue, value, options);
-            }
         }
     }
 }

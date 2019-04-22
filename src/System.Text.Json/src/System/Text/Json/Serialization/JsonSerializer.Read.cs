@@ -13,29 +13,7 @@ namespace System.Text.Json.Serialization
     /// </summary>
     public static partial class JsonSerializer
     {
-        internal static readonly JsonPropertyInfo s_missingProperty = new JsonPropertyInfoNotNullable<object, object>();
-        private static readonly JsonSerializerOptions s_defaultSettings = new JsonSerializerOptions();
-
-        private static object ReadCore(
-            Type returnType,
-            JsonSerializerOptions options,
-            ref Utf8JsonReader reader)
-        {
-            if (options == null)
-                options = s_defaultSettings;
-
-            ReadStack state = default;
-            JsonClassInfo classInfo = options.GetOrAddClass(returnType);
-            state.Current.JsonClassInfo = classInfo;
-            if (classInfo.ClassType != ClassType.Object)
-            {
-                state.Current.JsonPropertyInfo = classInfo.GetPolicyProperty();
-            }
-
-            ReadCore(options, ref reader, ref state);
-
-            return state.Current.ReturnValue;
-        }
+        internal static readonly JsonPropertyInfo s_missingProperty = new JsonPropertyInfoNotNullable<object, object, object>();
 
         // todo: for readability, refactor this method to split by ClassType(Enumerable, Object, or Value) like Write()
         private static void ReadCore(
@@ -64,7 +42,7 @@ namespace System.Text.Json.Serialization
                         Debug.Assert(state.Current.JsonClassInfo != default);
 
                         ReadOnlySpan<byte> propertyName = reader.HasValueSequence ? reader.ValueSequence.ToArray() : reader.ValueSpan;
-                        state.Current.JsonPropertyInfo = state.Current.JsonClassInfo.GetProperty(propertyName, state.Current.PropertyIndex);
+                        state.Current.JsonPropertyInfo = state.Current.JsonClassInfo.GetProperty(options, propertyName, ref state.Current);
                         if (state.Current.JsonPropertyInfo == null)
                         {
                             state.Current.JsonPropertyInfo = s_missingProperty;

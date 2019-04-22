@@ -28,23 +28,37 @@ namespace System.Text.Json
         private (int, string) _lastIndexAndString = (-1, null);
 
         /// <summary>
+        ///   This is an implementation detail and MUST NOT be called by source-package consumers.
+        /// </summary>
+        internal bool IsDisposable { get; }
+
+        /// <summary>
         ///   The <see cref="JsonElement"/> representing the value of the document.
         /// </summary>
         public JsonElement RootElement => new JsonElement(this, 0);
 
-        private JsonDocument(ReadOnlyMemory<byte> utf8Json, MetadataDb parsedData, byte[] extraRentedBytes)
+        private JsonDocument(
+            ReadOnlyMemory<byte> utf8Json,
+            MetadataDb parsedData,
+            byte[] extraRentedBytes,
+            bool isDisposable = true)
         {
             Debug.Assert(!utf8Json.IsEmpty);
 
             _utf8Json = utf8Json;
             _parsedData = parsedData;
             _extraRentedBytes = extraRentedBytes;
+
+            IsDisposable = isDisposable;
+
+            // extraRentedBytes better be null if we're not disposable.
+            Debug.Assert(isDisposable || extraRentedBytes == null);
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            if (_utf8Json.IsEmpty)
+            if (_utf8Json.IsEmpty || !IsDisposable)
             {
                 return;
             }
@@ -465,15 +479,24 @@ namespace System.Text.Json
             ReadOnlySpan<byte> data = _utf8Json.Span;
             ReadOnlySpan<byte> segment = data.Slice(row.Location, row.SizeOrLength);
 
-            if (JsonHelpers.TryParseAsISO(segment, out DateTime tmp, out int bytesConsumed) &&
-                segment.Length == bytesConsumed)
+            if (!JsonReaderHelper.IsValidDateTimeOffsetParseLength(segment.Length))
             {
-                value = tmp;
-                return true;
+                value = default;
+                return false;
             }
 
+            // Segment needs to be unescaped
+            if (row.HasComplexChildren)
+            {
+                return JsonReaderHelper.TryGetEscapedDateTime(segment, out value);
+            }
+
+            Debug.Assert(segment.IndexOf(JsonConstants.BackSlash) == -1);
+
             value = default;
-            return false;
+            return (segment.Length <= JsonConstants.MaximumDateTimeOffsetParseLength)
+                && JsonHelpers.TryParseAsISO(segment, out value, out int bytesConsumed)
+                && segment.Length == bytesConsumed;
         }
 
         /// <summary>
@@ -490,15 +513,56 @@ namespace System.Text.Json
             ReadOnlySpan<byte> data = _utf8Json.Span;
             ReadOnlySpan<byte> segment = data.Slice(row.Location, row.SizeOrLength);
 
-            if (JsonHelpers.TryParseAsISO(segment, out DateTimeOffset tmp, out int bytesConsumed) &&
-                segment.Length == bytesConsumed)
+            if (!JsonReaderHelper.IsValidDateTimeOffsetParseLength(segment.Length))
             {
-                value = tmp;
-                return true;
+                value = default;
+                return false;
             }
 
+            // Segment needs to be unescaped
+            if (row.HasComplexChildren)
+            {
+                return JsonReaderHelper.TryGetEscapedDateTimeOffset(segment, out value);
+            }
+
+            Debug.Assert(segment.IndexOf(JsonConstants.BackSlash) == -1);
+
             value = default;
-            return false;
+            return (segment.Length <= JsonConstants.MaximumDateTimeOffsetParseLength)
+                && JsonHelpers.TryParseAsISO(segment, out value, out int bytesConsumed)
+                && segment.Length == bytesConsumed;
+        }
+
+        /// <summary>
+        ///   This is an implementation detail and MUST NOT be called by source-package consumers.
+        /// </summary>
+        internal bool TryGetValue(int index, out Guid value)
+        {
+            CheckNotDisposed();
+
+            DbRow row = _parsedData.Get(index);
+
+            CheckExpectedType(JsonTokenType.String, row.TokenType);
+
+            ReadOnlySpan<byte> data = _utf8Json.Span;
+            ReadOnlySpan<byte> segment = data.Slice(row.Location, row.SizeOrLength);
+
+            if (segment.Length > JsonConstants.MaximumEscapedGuidLength)
+            {
+                value = default;
+                return false;
+            }
+
+            // Segment needs to be unescaped
+            if (row.HasComplexChildren)
+            {
+                return JsonReaderHelper.TryGetEscapedGuid(segment, out value);
+            }
+
+            Debug.Assert(segment.IndexOf(JsonConstants.BackSlash) == -1);
+
+            value = default;
+            return (segment.Length == JsonConstants.MaximumFormatGuidLength) && Utf8Parser.TryParse(segment, out value, out _, 'D');
         }
 
         /// <summary>
@@ -522,9 +586,24 @@ namespace System.Text.Json
         /// <summary>
         ///   This is an implementation detail and MUST NOT be called by source-package consumers.
         /// </summary>
+        internal JsonElement CloneElement(int index)
+        {
+            int endIndex = GetEndIndex(index, true);
+            MetadataDb newDb = _parsedData.CopySegment(index, endIndex);
+            ReadOnlyMemory<byte> segmentCopy = GetRawValue(index, includeQuotes: true).ToArray();
+
+            JsonDocument newDocument =
+                new JsonDocument(segmentCopy, newDb, extraRentedBytes: null, isDisposable: false);
+
+            return newDocument.RootElement;
+        }
+
+        /// <summary>
+        ///   This is an implementation detail and MUST NOT be called by source-package consumers.
+        /// </summary>
         internal void WriteElementTo(
             int index,
-            ref Utf8JsonWriter writer,
+            Utf8JsonWriter writer,
             ReadOnlySpan<char> propertyName)
         {
             CheckNotDisposed();
@@ -535,14 +614,14 @@ namespace System.Text.Json
             {
                 case JsonTokenType.StartObject:
                     writer.WriteStartObject(propertyName);
-                    WriteComplexElement(index, ref writer);
+                    WriteComplexElement(index, writer);
                     return;
                 case JsonTokenType.StartArray:
                     writer.WriteStartArray(propertyName);
-                    WriteComplexElement(index, ref writer);
+                    WriteComplexElement(index, writer);
                     return;
                 case JsonTokenType.String:
-                    WriteString(propertyName, row, ref writer);
+                    WriteString(propertyName, row, writer);
                     return;
                 case JsonTokenType.True:
                     writer.WriteBoolean(propertyName, value: true);
@@ -568,7 +647,7 @@ namespace System.Text.Json
         /// </summary>
         internal void WriteElementTo(
             int index,
-            ref Utf8JsonWriter writer,
+            Utf8JsonWriter writer,
             ReadOnlySpan<byte> propertyName)
         {
             CheckNotDisposed();
@@ -579,14 +658,14 @@ namespace System.Text.Json
             {
                 case JsonTokenType.StartObject:
                     writer.WriteStartObject(propertyName);
-                    WriteComplexElement(index, ref writer);
+                    WriteComplexElement(index, writer);
                     return;
                 case JsonTokenType.StartArray:
                     writer.WriteStartArray(propertyName);
-                    WriteComplexElement(index, ref writer);
+                    WriteComplexElement(index, writer);
                     return;
                 case JsonTokenType.String:
-                    WriteString(propertyName, row, ref writer);
+                    WriteString(propertyName, row, writer);
                     return;
                 case JsonTokenType.True:
                     writer.WriteBoolean(propertyName, value: true);
@@ -612,7 +691,7 @@ namespace System.Text.Json
         /// </summary>
         internal void WriteElementTo(
             int index,
-            ref Utf8JsonWriter writer)
+            Utf8JsonWriter writer)
         {
             CheckNotDisposed();
 
@@ -622,14 +701,14 @@ namespace System.Text.Json
             {
                 case JsonTokenType.StartObject:
                     writer.WriteStartObject();
-                    WriteComplexElement(index, ref writer);
+                    WriteComplexElement(index, writer);
                     return;
                 case JsonTokenType.StartArray:
                     writer.WriteStartArray();
-                    WriteComplexElement(index, ref writer);
+                    WriteComplexElement(index, writer);
                     return;
                 case JsonTokenType.String:
-                    WriteString(row, ref writer);
+                    WriteString(row, writer);
                     return;
                 case JsonTokenType.Number:
                     writer.WriteNumberValue(_utf8Json.Slice(row.Location, row.SizeOrLength).Span);
@@ -648,7 +727,7 @@ namespace System.Text.Json
             Debug.Fail($"Unexpected encounter with JsonTokenType {row.TokenType}");
         }
 
-        private void WriteComplexElement(int index, ref Utf8JsonWriter writer)
+        private void WriteComplexElement(int index, Utf8JsonWriter writer)
         {
             int endIndex = GetEndIndex(index, true);
 
@@ -660,7 +739,7 @@ namespace System.Text.Json
                 switch (row.TokenType)
                 {
                     case JsonTokenType.String:
-                        WriteString(row, ref writer);
+                        WriteString(row, writer);
                         continue;
                     case JsonTokenType.Number:
                         writer.WriteNumberValue(_utf8Json.Slice(row.Location, row.SizeOrLength).Span);
@@ -699,7 +778,7 @@ namespace System.Text.Json
                         switch (propertyValue.TokenType)
                         {
                             case JsonTokenType.String:
-                                WriteString(propertyName, propertyValue, ref writer);
+                                WriteString(propertyName, propertyValue, writer);
                                 continue;
                             case JsonTokenType.Number:
                                 writer.WriteNumber(
@@ -765,7 +844,7 @@ namespace System.Text.Json
             }
         }
 
-        private void WriteString(ReadOnlySpan<byte> propertyName, in DbRow row, ref Utf8JsonWriter writer)
+        private void WriteString(ReadOnlySpan<byte> propertyName, in DbRow row, Utf8JsonWriter writer)
         {
             ArraySegment<byte> rented = default;
 
@@ -781,7 +860,7 @@ namespace System.Text.Json
             }
         }
 
-        private void WriteString(ReadOnlySpan<char> propertyName, in DbRow row, ref Utf8JsonWriter writer)
+        private void WriteString(ReadOnlySpan<char> propertyName, in DbRow row, Utf8JsonWriter writer)
         {
             ArraySegment<byte> rented = default;
 
@@ -798,7 +877,7 @@ namespace System.Text.Json
             }
         }
 
-        private void WriteString(in DbRow row, ref Utf8JsonWriter writer)
+        private void WriteString(in DbRow row, Utf8JsonWriter writer)
         {
             ArraySegment<byte> rented = default;
 
@@ -980,13 +1059,15 @@ namespace System.Text.Json
             }
         }
 
-        private static void CheckSupportedOptions(JsonReaderOptions readerOptions)
+        private static void CheckSupportedOptions(
+            JsonReaderOptions readerOptions,
+            string paramName = null)
         {
             if (readerOptions.CommentHandling == JsonCommentHandling.Allow)
             {
                 throw new ArgumentException(
                     SR.JsonDocumentDoesNotSupportComments,
-                    nameof(readerOptions));
+                    paramName ?? nameof(readerOptions));
             }
         }
     }

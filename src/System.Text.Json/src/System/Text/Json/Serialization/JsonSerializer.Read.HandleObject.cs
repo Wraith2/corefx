@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Collections;
+
 namespace System.Text.Json.Serialization
 {
     public static partial class JsonSerializer
@@ -25,7 +27,7 @@ namespace System.Text.Json.Serialization
             else if (state.Current.JsonPropertyInfo != null)
             {
                 // Nested object
-                Type objType = state.Current.JsonPropertyInfo.PropertyType;
+                Type objType = state.Current.JsonPropertyInfo.RuntimePropertyType;
                 state.Push();
                 state.Current.JsonClassInfo = options.GetOrAddClass(objType);
             }
@@ -43,6 +45,8 @@ namespace System.Text.Json.Serialization
                 return isLastFrame;
             }
 
+            state.Current.JsonClassInfo.UpdateSortedPropertyCache(ref state.Current);
+
             object value = state.Current.ReturnValue;
 
             if (isLastFrame)
@@ -53,7 +57,7 @@ namespace System.Text.Json.Serialization
             }
 
             state.Pop();
-            ReadStackFrame.SetReturnValue(value, options, ref state.Current);
+            ApplyObjectToEnumerable(value, options, ref state.Current);
             return false;
         }
     }
